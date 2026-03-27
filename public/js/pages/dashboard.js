@@ -37,34 +37,34 @@ async function renderDashboard() {
     </div>
 
     <div class="stat-cards">
-      <div class="stat-card">
+      <a href="#/besuche" class="stat-card">
         <div class="stat-icon">\u{1F4C5}</div>
         <div class="stat-info">
           <div class="stat-label">Besuche KW ${kw}</div>
           <div class="stat-value">${besucheKW.length}</div>
         </div>
-      </div>
-      <div class="stat-card">
+      </a>
+      <a href="#/besuche" class="stat-card">
         <div class="stat-icon">\u{1F4C8}</div>
         <div class="stat-info">
           <div class="stat-label">Besuche gesamt</div>
           <div class="stat-value">${besuche.length}</div>
         </div>
-      </div>
-      <div class="stat-card">
+      </a>
+      <a href="#/kunden" class="stat-card">
         <div class="stat-icon">\u{1F465}</div>
         <div class="stat-info">
           <div class="stat-label">Kunden gesamt</div>
           <div class="stat-value">${kunden.length}</div>
         </div>
-      </div>
-      <div class="stat-card">
+      </a>
+      <a href="#/besuche" class="stat-card">
         <div class="stat-icon">\u{1F4CB}</div>
         <div class="stat-info">
           <div class="stat-label">Offene Projekte</div>
           <div class="stat-value">${offeneProjekte}</div>
         </div>
-      </div>
+      </a>
     </div>
 
     <div class="card">
@@ -73,13 +73,13 @@ async function renderDashboard() {
         ? '<div class="empty-state"><div class="empty-state-icon">\u{1F4CB}</div><p class="empty-state-text">Noch keine Besuche erfasst</p></div>'
         : `<ul class="activity-list">
             ${letzteAktivitaeten.map(b => `
-              <li class="activity-item">
+              <a href="#/besuche" class="activity-item">
                 <div class="activity-icon">\u{1F4CB}</div>
                 <div class="activity-text">
                   <div><strong>${escapeHtml(b.firma)}</strong> - ${escapeHtml(b.besuchstyp || b.typ || 'Besuch')}</div>
                   <div class="activity-time">${formatDatum(b.datum)} \u00B7 ${escapeHtml(b.ort || '')}</div>
                 </div>
-              </li>
+              </a>
             `).join('')}
           </ul>`
       }

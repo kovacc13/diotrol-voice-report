@@ -344,6 +344,9 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: flex-start;
   gap: 16px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
 }
 
 .stat-card:hover {
@@ -1386,6 +1389,9 @@ h1, h2, h3, h4, h5, h6 {
   border-bottom: 1px solid var(--border);
   font-size: 14px;
   transition: background 0.2s ease;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
 }
 
 .activity-item:last-child {
@@ -1393,7 +1399,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .activity-item:hover {
-  background: rgba(0,0,0,0.01);
+  background: rgba(0,0,0,0.03);
+  transform: translateX(2px);
 }
 
 .activity-icon {
