@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D.P. Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🛡</text></svg>">
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">🛡</span>
+        <span class="logo-text">D.P. Report</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#/dashboard" class="nav-item" data-page="dashboard">
+        <span class="nav-icon">🏠</span>
+        <span>Dashboard</span>
+      </a>
+      <a href="#/neuer-besuch" class="nav-item nav-item-orange" data-page="neuer-besuch">
+        <span class="nav-icon">🎤</span>
+        <span>Neuer Besuch</span>
+      </a>
+      <a href="#/besuche" class="nav-item" data-page="besuche">
+        <span class="nav-icon">📋</span>
+        <span>Besuche</span>
+      </a>
+      <a href="#/kunden" class="nav-item" data-page="kunden">
+        <span class="nav-icon">👥</span>
+        <span>Kunden</span>
+      </a>
+      <a href="#/wochenbericht" class="nav-item" data-page="wochenbericht">
+        <span class="nav-icon">📅</span>
+        <span>Wochenbericht</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="#" class="nav-item nav-item-logout" onclick="return false;">
+        <span class="nav-icon">↪</span>
+        <span>Abmelden</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Mobile Header: Logo links, Hamburger rechts -->
+  <header class="mobile-header" id="mobileHeader">
+    <div class="mobile-logo">
+      <span class="logo-icon">\u{1F6E1}</span>
+      <span>D.P.</span>
+    </div>
+    <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()">
+      <span></span><span></span><span></span>
+    </button>
+  </header>
+
+  <!-- Overlay fuer Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <!-- Hauptbereich -->
+  <main class="main-content" id="mainContent">
+    <!-- Wird dynamisch befuellt -->
+  </main>
+
+  <!-- Lightbox fuer Fotos -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <img id="lightboxImg" src="" alt="Foto">
+    <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+  </div>
+
+  <!-- Toast Benachrichtigungen -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/router.js"></script>
+  <script src="/js/components.js"></script>
+  <script src="/js/pages/dashboard.js"></script>
+  <script src="/js/pages/neuer-besuch.js"></script>
+  <script src="/js/pages/besuche.js"></script>
+  <script src="/js/pages/kunden.js"></script>
+  <script src="/js/pages/wochenbericht.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
