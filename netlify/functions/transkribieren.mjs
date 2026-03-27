@@ -36,12 +36,38 @@ export default async (req, context) => {
       return new Response(JSON.stringify({ error: 'Keine Audio-Datei gesendet' }), { status: 400, headers });
     }
 
+    // Produktglossar fuer Whisper (verbessert Erkennung von Markennamen und Fachbegriffen)
+    // Whisper lernt diese Woerter vor der Transkription kennen
+    const DIOTROL_GLOSSAR = [
+      // Diotrol Produkte
+      'Dio-Jet', 'SEFO', 'Sun-Ex Finish One', 'Sun-Ex', 'Sun-Ex UV',
+      'Aqua Naturoel-Lasur', 'Longlife', 'Hydroperl UV', 'Aqua Industrie 3in1',
+      'Aqua F', 'GoldenOil Onecoat', 'GoldenOil Exterior', 'DioShield',
+      'Wood UV', 'Mineral Protect Finish', 'Duratec Anti-Graffiti', 'Duratec ZipWall',
+      'Aqua Impraegnierung', 'Naturoel-Impraegnierung', 'Dio-Entgrauer',
+      'Woodseal', 'Whiteprimer 60', 'Aqua Premium Wax', 'Edelwax UV',
+      'Dynalan Cover Oel', 'Aqua F', 'Longlife',
+      // Fachbegriffe Holzbeschichtung
+      'Holzbeschichtung', 'Holzschutz', 'Lasur', 'Impraegnierung', 'Grundierung',
+      'Deckschicht', 'Schichtaufbau', 'Aufbauempfehlung', 'Glanzgrad',
+      'Technisches Merkblatt', 'TMB', 'Farbton', 'RAL', 'NCS',
+      'Lichtschutz', 'UV-Schutz', 'Fassadenbeschichtung', 'Terrassendiele',
+      'Stirnkante', 'Hirnholz',
+      // Diotrol interne Kuerzel
+      'DP', 'MH', 'BaLa', 'DW', 'Diotrol', 'Dulliken',
+      // Typische Kundenfirmen
+      'Balteschwiler', 'Klarer Fenster', 'KABE Farben', 'Fiocchi',
+      'Knuchel', 'Teknos', 'Sikkens', 'Boehme', 'SunCare'
+    ].join(', ');
+
     // An OpenAI Whisper API senden
     const whisperForm = new FormData();
     whisperForm.append('file', audioFile, 'audio.webm');
     whisperForm.append('model', 'whisper-1');
     whisperForm.append('language', 'de');
     whisperForm.append('response_format', 'json');
+    // Glossar als Prompt-Kontext: Whisper erkennt diese Woerter jetzt zuverlaessiger
+    whisperForm.append('prompt', `Besuchsbericht Diotrol AG, Holzbeschichtungen Schweiz. Produkte: ${DIOTROL_GLOSSAR}`);
 
     const whisperResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',

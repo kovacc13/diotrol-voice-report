@@ -43,9 +43,22 @@ export default async (req, context) => {
         max_tokens: 2000,
         messages: [{
           role: 'user',
-          content: `Analysiere diesen diktierten Besuchsbericht eines Aussendienstmitarbeiters der Diotrol AG (Holzbeschichtungen/Holzschutz, Schweiz) und extrahiere die Informationen als JSON.
+          content: `Du analysierst diktierte Besuchsberichte eines Aussendienstmitarbeiters der Diotrol AG (Holzbeschichtungen/Holzschutz, Schweiz). Der Sprecher ist Schweizer und spricht Schweizerdeutsch - die Transkription kann daher Schreibfehler bei Produktnamen enthalten.
 
-Der Text:
+WICHTIG - Produktglossar (korrigiere Schreibfehler auf diese exakten Namen):
+Lichtschutz/Innen: Dio-Jet, SEFO (= Sun-Ex Finish One), Sun-Ex, Sun-Ex UV
+Fassade/Aussen: Aqua Naturoel-Lasur, Longlife, Hydroperl UV, Aqua Industrie 3in1
+Fenster: Aqua F, Dynalan Cover Oel
+Holzoel: GoldenOil Onecoat, GoldenOil Exterior
+Spezial: DioShield, Wood UV, Mineral Protect Finish, Duratec Anti-Graffiti, Duratec ZipWall
+Impraegnierung: Aqua Impraegnierung Sun-Ex UV, Naturoel-Impraegnierung
+Pflege: Dio-Entgrauer, Woodseal, Whiteprimer 60, Aqua Premium Wax Sun-Ex, Edelwax UV
+
+Interne Kuerzel aufloesen: DP=Daniel Pfister, MH=Vorgesetzter, BaLa=Balteschwiler AG, TMB=Technisches Merkblatt, KW=Kalenderwoche
+
+Wenn ein Produktname aehnlich klingt (z.B. "Hydropärl" oder "Hydro Pearl" -> Hydroperl UV, "Golden Oil" -> GoldenOil Onecoat, "Sefo" -> SEFO), korrigiere ihn auf den exakten Namen aus dem Glossar.
+
+Der diktierte Text:
 """
 ${text}
 """
@@ -57,7 +70,7 @@ Antworte NUR mit einem JSON-Objekt (kein Markdown, keine Erklaerung):
   "kontaktperson": "Name der Kontaktperson",
   "segment": "eines von: Schreiner, Maler, Zimmerei, Fensterbau, Fassadenbau, Architekt, Generalunternehmer, Handel, Sonstiges",
   "besuchstyp": "eines von: Erstbesuch, Folgebesuch, Kaltbesuch, Beratung, Reklamation, Schulung, Messe, Telefonat",
-  "produkte": "Produkt1, Produkt2, Produkt3",
+  "produkte": "Exakter Produktname1, Exakter Produktname2",
   "themen": "\u2022 Thema 1\\n\u2022 Thema 2\\n\u2022 Thema 3",
   "ergebnis": "Zusammenfassung des Ergebnisses",
   "naechsteSchritte": "\u2022 Schritt 1\\n\u2022 Schritt 2",
