@@ -181,8 +181,13 @@ async function renderNeuerBesuch(params) {
       </div>
 
       <div class="form-group mb-16">
-        <label>Naechste Schritte</label>
+        <label>⭐ Naechste Schritte (Daniel)</label>
         <textarea id="feldSchritte" rows="3">${escapeHtml(d?.naechsteSchritte || '')}</textarea>
+      </div>
+
+      <div class="form-group mb-16">
+        <label>👔 Aufgaben fuer Marco</label>
+        <textarea id="feldTodosMarco" rows="2" placeholder="Aufgaben fuer den Chef / Vorgesetzten...">${escapeHtml(d?.todosMarco || '')}</textarea>
       </div>
 
       <div class="form-row">
@@ -467,6 +472,7 @@ async function kiAnalysieren() {
     if (result.themen) document.getElementById('feldThemen').value = result.themen;
     if (result.ergebnis) document.getElementById('feldErgebnis').value = result.ergebnis;
     if (result.naechsteSchritte) document.getElementById('feldSchritte').value = result.naechsteSchritte;
+    if (result.todosMarco) document.getElementById('feldTodosMarco').value = result.todosMarco;
     if (result.stellungnahme) document.getElementById('feldStellungnahme').value = result.stellungnahme;
     if (result.projekt) document.getElementById('feldProjekt').value = result.projekt;
 
@@ -656,6 +662,7 @@ async function besuchSpeichern() {
     themen: document.getElementById('feldThemen').value.trim(),
     ergebnis: document.getElementById('feldErgebnis').value.trim(),
     naechsteSchritte: document.getElementById('feldSchritte').value.trim(),
+    todosMarco: document.getElementById('feldTodosMarco').value.trim(),
     stellungnahme: document.getElementById('feldStellungnahme').value.trim(),
     projekt: document.getElementById('feldProjekt').value.trim(),
     fotos: JSON.stringify(besuchFormState.fotos.map(f => typeof f === 'string' ? f : f.url))

@@ -54,9 +54,21 @@ Spezial: DioShield, Wood UV, Mineral Protect Finish, Duratec Anti-Graffiti, Dura
 Impraegnierung: Aqua Impraegnierung Sun-Ex UV, Naturoel-Impraegnierung
 Pflege: Dio-Entgrauer, Woodseal, Whiteprimer 60, Aqua Premium Wax Sun-Ex, Edelwax UV
 
-Interne Kuerzel aufloesen: DP=Daniel Pfister, MH=Vorgesetzter, BaLa=Balteschwiler AG, TMB=Technisches Merkblatt, KW=Kalenderwoche
+Interne Kuerzel aufloesen: DP=Daniel Pfister, MH/Marco=Vorgesetzter/Chef, BaLa=Balteschwiler AG, TMB=Technisches Merkblatt, KW=Kalenderwoche
 
 Wenn ein Produktname aehnlich klingt (z.B. "Hydropärl" oder "Hydro Pearl" -> Hydroperl UV, "Golden Oil" -> GoldenOil Onecoat, "Sefo" -> SEFO), korrigiere ihn auf den exakten Namen aus dem Glossar.
+
+SEGMENT-ERKENNUNG - Erkenne das Segment anhand von:
+- Firmenname (z.B. "Fenster" im Namen = Fensterbau, "Holzbau" = Zimmerei)
+- Taetigkeitsbereich (Fassade streichen = Maler, Schreinerei = Schreiner)
+- Produkte (Aqua F = typisch Fensterbau, Architektenberatung = Architekt)
+- Branchenhinweise im Text (Zimmermann, Schreinermeister, Malergeschaeft, Architekturbüro, Bauleitung, Haendler, GU, usw.)
+WICHTIG: "Sonstiges" nur verwenden wenn KEIN anderes Segment passt! Lieber das wahrscheinlichste Segment waehlen.
+
+TO-DO ZUORDNUNG - Erkenne wessen Aufgabe es ist:
+- Aufgaben fuer Daniel Pfister (DP): Alles was er selbst erledigen muss (Muster senden, Angebot erstellen, Kundenbesuche, Tests, Nachfassen)
+- Aufgaben fuer Marco/MH (Chef/Vorgesetzter): Signalwoerter wie "fuer Marco", "Marco soll", "Chef informieren", "MH mitteilen", "Geschaeftsleitung", "intern besprechen", "Budget benoetigt", "Freigabe", "strategisch", "Entscheidung von oben"
+- Wenn nicht klar zuordenbar: standardmaessig als Daniel-ToDo behandeln
 
 Der diktierte Text:
 """
@@ -74,6 +86,7 @@ Antworte NUR mit einem JSON-Objekt (kein Markdown, keine Erklaerung):
   "themen": "\u2022 Thema 1\\n\u2022 Thema 2\\n\u2022 Thema 3",
   "ergebnis": "Zusammenfassung des Ergebnisses",
   "naechsteSchritte": "\u2022 Schritt 1\\n\u2022 Schritt 2",
+  "todosMarco": "\u2022 Aufgabe fuer Marco 1\\n\u2022 Aufgabe fuer Marco 2 (leer lassen wenn nichts fuer den Chef dabei ist)",
   "stellungnahme": "optional, leer lassen wenn nicht erwaehnt",
   "projekt": "optional, Projektname wenn erwaehnt"
 }`

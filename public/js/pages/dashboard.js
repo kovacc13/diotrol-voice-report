@@ -27,6 +27,27 @@ async function renderDashboard() {
   // Letzte 5 Aktivitaeten
   const letzteAktivitaeten = besuche.slice(0, 5);
 
+  // Segment-Ranking fuer aktuelle KW
+  const segmenteKW = {};
+  besucheKW.forEach(b => {
+    const seg = b.segment || 'Sonstiges';
+    segmenteKW[seg] = (segmenteKW[seg] || 0) + 1;
+  });
+  const segmentRankingKW = Object.entries(segmenteKW).sort((a, b) => b[1] - a[1]);
+  const maxSegKW = segmentRankingKW[0] ? segmentRankingKW[0][1] : 1;
+
+  const SEG_FARBEN_DASH = {
+    'Architekt': '#2563eb', 'Maler': '#dc2626', 'Zimmerei': '#16a34a',
+    'Fensterbau': '#9333ea', 'Schreiner': '#ca8a04', 'Fassadenbau': '#0891b2',
+    'Handel': '#ea580c', 'Generalunternehmer': '#4f46e5', 'Sonstiges': '#6b7280'
+  };
+
+  const SEGMENT_ICONS_DASH = {
+    'Schreiner': 'T', 'Maler': 'M', 'Zimmerei': 'H',
+    'Fensterbau': 'F', 'Fassadenbau': 'Fa', 'Architekt': 'A',
+    'Generalunternehmer': 'GU', 'Handel': 'D', 'Sonstiges': 'X'
+  };
+
   main.innerHTML = `
     <div class="page-header">
       <div>
@@ -66,6 +87,33 @@ async function renderDashboard() {
         </div>
       </a>
     </div>
+
+    ${segmentRankingKW.length > 0 ? `
+    <div class="card" style="margin-bottom:16px;">
+      <h3 class="card-title">📊 Segmentverteilung KW ${kw}</h3>
+      <div class="segment-ranking-list">
+        ${segmentRankingKW.map(([seg, cnt], idx) => {
+          const prozent = besucheKW.length > 0 ? Math.round(cnt / besucheKW.length * 100) : 0;
+          const balkenBreite = Math.round(cnt / maxSegKW * 100);
+          const farbe = SEG_FARBEN_DASH[seg] || '#6b7280';
+          const icon = SEGMENT_ICONS_DASH[seg] || 'X';
+          return `
+            <div class="segment-ranking-row">
+              <div class="segment-ranking-rank">${idx + 1}.</div>
+              <div class="segment-ranking-icon" style="background:${farbe};">${icon}</div>
+              <div class="segment-ranking-info">
+                <div class="segment-ranking-name">${seg}</div>
+                <div class="segment-ranking-bar-bg">
+                  <div class="segment-ranking-bar" style="width:${balkenBreite}%; background:${farbe};"></div>
+                </div>
+              </div>
+              <div class="segment-ranking-count">${cnt}</div>
+              <div class="segment-ranking-pct">${prozent}%</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>` : ''}
 
     <div class="card">
       <h3 class="card-title">Letzte Aktivitaeten</h3>

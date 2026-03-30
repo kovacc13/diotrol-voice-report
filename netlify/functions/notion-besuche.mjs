@@ -78,6 +78,7 @@ function buildBesuchProperties(data, kundeId) {
   if (data.themen !== undefined) props['Themen'] = { rich_text: [{ text: { content: (data.themen || '').substring(0, 2000) } }] };
   if (data.ergebnis !== undefined) props['Ergebnis'] = { rich_text: [{ text: { content: (data.ergebnis || '').substring(0, 2000) } }] };
   if (data.naechsteSchritte !== undefined) props['NaechsteSchritte'] = { rich_text: [{ text: { content: (data.naechsteSchritte || '').substring(0, 2000) } }] };
+  if (data.todosMarco !== undefined) props['TodosMarco'] = { rich_text: [{ text: { content: (data.todosMarco || '').substring(0, 2000) } }] };
   if (data.stellungnahme !== undefined) props['Stellungnahme'] = { rich_text: [{ text: { content: (data.stellungnahme || '').substring(0, 2000) } }] };
   if (data.projekt !== undefined) props['Projekt'] = { rich_text: [{ text: { content: data.projekt || '' } }] };
   if (data.datum !== undefined && data.datum) props['Datum'] = { date: { start: data.datum } };
@@ -120,6 +121,7 @@ function pageToObject(page) {
     themen: getText(p['Themen']),
     ergebnis: getText(p['Ergebnis']),
     naechsteSchritte: getText(p['NaechsteSchritte']),
+    todosMarco: getText(p['TodosMarco']),
     stellungnahme: getText(p['Stellungnahme']),
     projekt: getText(p['Projekt']),
     datum: getText(p['Datum']),

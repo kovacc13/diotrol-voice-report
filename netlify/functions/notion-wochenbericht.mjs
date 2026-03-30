@@ -47,6 +47,7 @@ function besuchToObject(page) {
     themen: getText(p['Themen']),
     ergebnis: getText(p['Ergebnis']),
     naechsteSchritte: getText(p['NaechsteSchritte']),
+    todosMarco: getText(p['TodosMarco']),
     stellungnahme: getText(p['Stellungnahme']),
     projekt: getText(p['Projekt']),
     datum: getText(p['Datum']),
@@ -115,12 +116,23 @@ export default async (req, context) => {
     const neukunden = besuche.filter(b => b.besuchstyp === 'Erstbesuch').length;
     const bestandskunden = besuche.length - neukunden;
 
+    // Segmentverteilung berechnen (sortiert nach Anzahl absteigend)
+    const segmentCount = {};
+    besuche.forEach(b => {
+      const seg = b.segment || 'Sonstiges';
+      segmentCount[seg] = (segmentCount[seg] || 0) + 1;
+    });
+    const segmentRanking = Object.entries(segmentCount)
+      .sort((a, b) => b[1] - a[1])
+      .map(([segment, count]) => ({ segment, count, prozent: Math.round(count / besuche.length * 100) }));
+
     const stats = {
       totalBesuche: besuche.length,
       neukunden,
       bestandskunden,
       fokusProdukte: Array.from(alleProdukte).slice(0, 5).join(', '),
-      firmenBesucht: firmen.size
+      firmenBesucht: firmen.size,
+      segmentRanking
     };
 
     // Verfuegbare KWs ermitteln (fuer Dropdown)

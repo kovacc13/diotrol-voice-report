@@ -1,8 +1,13 @@
 // ========================================
 // Wochenbericht-Seite
+// Mit To-Do-Split (Daniel / Marco)
+// und Segment-Ranking
 // ========================================
 
 let wochenberichtData = null;
+
+// To-Do Status (Checkboxen) - wird pro Session im Speicher gehalten
+let todoStatus = {};
 
 async function renderWochenbericht() {
   const main = document.getElementById('mainContent');
@@ -26,6 +31,8 @@ async function renderWochenbericht() {
             <button class="dropdown-item" onclick="exportWord()">📘 Word herunterladen (.docx)</button>
             <button class="dropdown-item" onclick="exportText()">📝 Text herunterladen (.txt)</button>
             <button class="dropdown-item" onclick="exportEmail()">✉️ Per E-Mail senden</button>
+            <hr style="margin:4px 0; border:none; border-top:1px solid #e5e7eb;">
+            <button class="dropdown-item" onclick="exportMarcoReport()">👔 Marco-Bericht senden</button>
           </div>
         </div>
       </div>
@@ -54,10 +61,51 @@ async function renderWochenbericht() {
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">\u{1F4E6}</div>
+        <div class="stat-icon">\u{1F465}</div>
         <div class="stat-info">
-          <div class="stat-label">Fokus-Produkte</div>
-          <div class="stat-value" id="wbProdukte">-</div>
+          <div class="stat-label">Kunden besucht</div>
+          <div class="stat-value" id="wbKundenBesucht">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Segment-Ranking -->
+    <div class="card" id="wbSegmentRanking" style="margin-bottom:16px;">
+      <h3 class="card-title">📊 Segmentverteilung</h3>
+      <div id="segmentRankingContent">
+        <div class="loading"><span class="spinner"></span> Laden...</div>
+      </div>
+    </div>
+
+    <!-- To-Do Listen (Daniel + Marco) -->
+    <div id="wbTodoSection" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+      <div class="card" id="wbTodosDaniel">
+        <div class="todo-header-daniel">
+          <h3 class="card-title" style="margin:0;">⭐ Meine To-Dos (Daniel)</h3>
+          <span class="todo-counter" id="todoDanielCounter">-</span>
+        </div>
+        <div id="todoDanielContent">
+          <div class="loading"><span class="spinner"></span> Laden...</div>
+        </div>
+        <div class="todo-actions" id="todoDanielActions" style="display:none;">
+          <button class="btn btn-sm btn-outline" onclick="toggleErledigte('daniel')">Erledigte anzeigen</button>
+          <button class="btn btn-sm btn-outline" onclick="copyTodos('daniel')">📋 Kopieren</button>
+          <button class="btn btn-sm btn-outline" onclick="downloadTodos('daniel')">💾 Download</button>
+        </div>
+      </div>
+      <div class="card" id="wbTodosMarco">
+        <div class="todo-header-marco">
+          <h3 class="card-title" style="margin:0;">👔 Aufgaben fuer Marco</h3>
+          <span class="todo-counter" id="todoMarcoCounter">-</span>
+        </div>
+        <div id="todoMarcoContent">
+          <div class="loading"><span class="spinner"></span> Laden...</div>
+        </div>
+        <div class="todo-actions" id="todoMarcoActions" style="display:none;">
+          <button class="btn btn-sm btn-outline" onclick="toggleErledigte('marco')">Erledigte anzeigen</button>
+          <button class="btn btn-sm btn-outline" onclick="copyTodos('marco')">📋 Kopieren</button>
+          <button class="btn btn-sm btn-outline" onclick="downloadTodos('marco')">💾 Download</button>
+          <button class="btn btn-sm btn-orange" onclick="emailTodos('marco')">✉️ An Marco senden</button>
         </div>
       </div>
     </div>
@@ -86,7 +134,6 @@ async function wochenberichtLaden() {
       kwSelect.innerHTML = data.verfuegbareKWs.map(k =>
         `<option value="${k}" ${k === current ? 'selected' : ''}>KW ${k}</option>`
       ).join('');
-      // Aktuelle KW hinzufuegen falls nicht vorhanden
       if (!data.verfuegbareKWs.includes(getCurrentKW())) {
         kwSelect.innerHTML = `<option value="${getCurrentKW()}">KW ${getCurrentKW()} (aktuell)</option>` + kwSelect.innerHTML;
       }
@@ -97,7 +144,13 @@ async function wochenberichtLaden() {
     document.getElementById('wbTotal').textContent = stats.totalBesuche || 0;
     document.getElementById('wbNeukunden').textContent = stats.neukunden || 0;
     document.getElementById('wbBestandskunden').textContent = stats.bestandskunden || 0;
-    document.getElementById('wbProdukte').textContent = stats.fokusProdukte || '-';
+    document.getElementById('wbKundenBesucht').textContent = stats.firmenBesucht || 0;
+
+    // Segment-Ranking rendern
+    renderSegmentRanking(data);
+
+    // To-Do Listen rendern
+    renderTodoListen(data);
 
     // Besuche rendern
     renderWochenberichtBesuche(data.besuche || []);
@@ -112,6 +165,224 @@ async function wochenberichtLaden() {
   }
 }
 
+// ============================================================
+// SEGMENT-RANKING
+// ============================================================
+function renderSegmentRanking(data) {
+  const container = document.getElementById('segmentRankingContent');
+  const besuche = data.besuche || [];
+
+  if (besuche.length === 0) {
+    container.innerHTML = '<p class="muted">Keine Daten</p>';
+    return;
+  }
+
+  // Segmentverteilung berechnen (auch client-seitig fuer Exporte)
+  const segmente = {};
+  besuche.forEach(b => {
+    const seg = b.segment || 'Sonstiges';
+    segmente[seg] = (segmente[seg] || 0) + 1;
+  });
+
+  const ranking = Object.entries(segmente)
+    .sort((a, b) => b[1] - a[1]);
+
+  const maxCount = ranking[0] ? ranking[0][1] : 1;
+
+  // Segment-Farben fuer die Balken
+  const SEG_FARBEN = {
+    'Architekt': '#2563eb', 'Maler': '#dc2626', 'Zimmerei': '#16a34a',
+    'Fensterbau': '#9333ea', 'Schreiner': '#ca8a04', 'Fassadenbau': '#0891b2',
+    'Handel': '#ea580c', 'Generalunternehmer': '#4f46e5', 'Sonstiges': '#6b7280'
+  };
+
+  container.innerHTML = `
+    <div class="segment-ranking-list">
+      ${ranking.map(([seg, cnt], idx) => {
+        const prozent = Math.round(cnt / besuche.length * 100);
+        const balkenBreite = Math.round(cnt / maxCount * 100);
+        const farbe = SEG_FARBEN[seg] || '#6b7280';
+        const icon = SEGMENT_ICONS[seg] || 'X';
+        return `
+          <div class="segment-ranking-row">
+            <div class="segment-ranking-rank">${idx + 1}.</div>
+            <div class="segment-ranking-icon" style="background:${farbe};">${icon}</div>
+            <div class="segment-ranking-info">
+              <div class="segment-ranking-name">${seg}</div>
+              <div class="segment-ranking-bar-bg">
+                <div class="segment-ranking-bar" style="width:${balkenBreite}%; background:${farbe};"></div>
+              </div>
+            </div>
+            <div class="segment-ranking-count">${cnt}</div>
+            <div class="segment-ranking-pct">${prozent}%</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+// ============================================================
+// TO-DO LISTEN (Daniel + Marco)
+// ============================================================
+function renderTodoListen(data) {
+  const besuche = data.besuche || [];
+
+  // Daniel's To-Dos = naechsteSchritte (wie bisher)
+  const todosDaniel = [];
+  const todosMarco = [];
+
+  besuche.forEach(b => {
+    if (b.naechsteSchritte) {
+      // Jede Zeile als separates To-Do
+      const lines = b.naechsteSchritte.split('\n')
+        .map(l => l.trim().replace(/^[\u2022\-\*]\s*/, ''))
+        .filter(l => l.length > 0);
+      lines.forEach(line => {
+        todosDaniel.push({
+          id: `d-${b.id}-${todosDaniel.length}`,
+          firma: b.firma || 'Intern',
+          text: line,
+          datum: b.datum,
+          besuchstyp: b.besuchstyp || b.typ || 'Besuch'
+        });
+      });
+    }
+    if (b.todosMarco) {
+      const lines = b.todosMarco.split('\n')
+        .map(l => l.trim().replace(/^[\u2022\-\*]\s*/, ''))
+        .filter(l => l.length > 0);
+      lines.forEach(line => {
+        todosMarco.push({
+          id: `m-${b.id}-${todosMarco.length}`,
+          firma: b.firma || 'Intern',
+          text: line,
+          datum: b.datum,
+          besuchstyp: b.besuchstyp || b.typ || 'Besuch'
+        });
+      });
+    }
+  });
+
+  renderTodoList('daniel', todosDaniel);
+  renderTodoList('marco', todosMarco);
+}
+
+function renderTodoList(typ, todos) {
+  const container = document.getElementById(typ === 'daniel' ? 'todoDanielContent' : 'todoMarcoContent');
+  const counter = document.getElementById(typ === 'daniel' ? 'todoDanielCounter' : 'todoMarcoCounter');
+  const actions = document.getElementById(typ === 'daniel' ? 'todoDanielActions' : 'todoMarcoActions');
+
+  const offene = todos.filter(t => !todoStatus[t.id]);
+  const erledigte = todos.filter(t => todoStatus[t.id]);
+
+  counter.textContent = `${offene.length} offen` + (erledigte.length > 0 ? ` · ${erledigte.length} erledigt` : '');
+
+  if (todos.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="padding:16px;">
+        <p class="empty-state-text" style="font-size:13px;">Keine ${typ === 'daniel' ? 'eigenen' : 'Marco-'}Aufgaben in dieser KW</p>
+      </div>
+    `;
+    actions.style.display = 'none';
+    return;
+  }
+
+  actions.style.display = 'flex';
+
+  // Zeige nur offene, ausser "Erledigte anzeigen" ist aktiv
+  const showErledigte = container.dataset.showErledigte === 'true';
+  const visibleTodos = showErledigte ? todos : offene;
+
+  container.innerHTML = `
+    <div class="todo-checklist">
+      ${visibleTodos.map(t => {
+        const checked = todoStatus[t.id] ? 'checked' : '';
+        const strikeClass = todoStatus[t.id] ? 'todo-done' : '';
+        return `
+          <label class="todo-item ${strikeClass}">
+            <input type="checkbox" ${checked} onchange="toggleTodo('${t.id}', '${typ}')">
+            <span class="todo-text">
+              <strong>[${escapeHtml(t.firma)}]:</strong> ${escapeHtml(t.text)}
+              <span class="todo-meta">(Quelle: ${escapeHtml(t.besuchstyp)} vom ${formatDatumKurz(t.datum)})</span>
+            </span>
+          </label>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  // Speichere Todos fuer Export
+  container.dataset.todos = JSON.stringify(todos);
+}
+
+function toggleTodo(todoId, typ) {
+  todoStatus[todoId] = !todoStatus[todoId];
+  // Re-render nur die betroffene Liste
+  if (wochenberichtData) renderTodoListen(wochenberichtData);
+}
+
+function toggleErledigte(typ) {
+  const container = document.getElementById(typ === 'daniel' ? 'todoDanielContent' : 'todoMarcoContent');
+  const current = container.dataset.showErledigte === 'true';
+  container.dataset.showErledigte = !current;
+  if (wochenberichtData) renderTodoListen(wochenberichtData);
+}
+
+function getTodosFromContainer(typ) {
+  const container = document.getElementById(typ === 'daniel' ? 'todoDanielContent' : 'todoMarcoContent');
+  try {
+    return JSON.parse(container.dataset.todos || '[]');
+  } catch { return []; }
+}
+
+function copyTodos(typ) {
+  const todos = getTodosFromContainer(typ);
+  const label = typ === 'daniel' ? 'Meine To-Dos (Daniel)' : 'Aufgaben fuer Marco';
+  let text = `${label} - KW ${wochenberichtData?.kw || ''}\n${'='.repeat(40)}\n\n`;
+  todos.forEach(t => {
+    const status = todoStatus[t.id] ? '[x]' : '[ ]';
+    text += `${status} [${t.firma}]: ${t.text}\n`;
+  });
+  navigator.clipboard.writeText(text).then(() => {
+    showToast(`${label} kopiert!`, 'success');
+  }).catch(() => {
+    showToast('Kopieren fehlgeschlagen', 'error');
+  });
+}
+
+function downloadTodos(typ) {
+  const todos = getTodosFromContainer(typ);
+  const label = typ === 'daniel' ? 'Meine_ToDos_Daniel' : 'Aufgaben_Marco';
+  let text = `${typ === 'daniel' ? 'MEINE TO-DOs (Daniel Pfister)' : 'AUFGABEN FUER MARCO'}\n`;
+  text += `KW ${wochenberichtData?.kw || ''} / ${wochenberichtData?.jahr || ''}\n`;
+  text += `${'='.repeat(50)}\n\n`;
+  todos.forEach(t => {
+    const status = todoStatus[t.id] ? '[x]' : '[ ]';
+    text += `${status} [${t.firma}]: ${t.text}\n    Quelle: ${t.besuchstyp} vom ${formatDatumKurz(t.datum)}\n\n`;
+  });
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  downloadBlob(blob, `${label}_KW${wochenberichtData?.kw || ''}.txt`);
+  showToast('To-Do-Liste heruntergeladen', 'success');
+}
+
+function emailTodos(typ) {
+  const todos = getTodosFromContainer(typ);
+  const kw = wochenberichtData?.kw || '';
+  const jahr = wochenberichtData?.jahr || '';
+  let text = `Aufgaben aus Wochenbericht KW ${kw} / ${jahr}\n\n`;
+  todos.forEach(t => {
+    text += `[ ] [${t.firma}]: ${t.text}\n`;
+  });
+  text += `\n---\nErstellt aus dem Wochenbericht von Daniel Pfister`;
+  const subject = encodeURIComponent(`Aufgaben aus Wochenbericht KW ${kw}`);
+  const body = encodeURIComponent(text);
+  window.open(`mailto:?subject=${subject}&body=${body}`, '_self');
+}
+
+// ============================================================
+// BESUCHS-DETAIL-ANSICHT
+// ============================================================
 function renderWochenberichtBesuche(besuche) {
   const container = document.getElementById('wbBesuche');
 
@@ -129,6 +400,7 @@ function renderWochenberichtBesuche(besuche) {
     <div class="wb-besuch">
       <div class="wb-besuch-header">
         <span class="wb-besuch-firma">${escapeHtml(b.firma)}</span>
+        ${b.segment ? `<span class="badge badge-segment">${escapeHtml(b.segment)}</span>` : ''}
         ${b.besuchstyp ? `<span class="badge badge-typ">${escapeHtml(b.besuchstyp)}</span>` : ''}
         ${b.datum ? `<span style="font-size:13px; color:var(--text-light);">📅 ${formatDatum(b.datum)}</span>` : ''}
         ${b.ort ? `<span style="font-size:13px; color:var(--text-light);">📍 ${escapeHtml(b.ort)}</span>` : ''}
@@ -142,7 +414,8 @@ function renderWochenberichtBesuche(besuche) {
         <div>
           <div class="wb-column-title">⚙️ ERGEBNIS & SCHRITTE</div>
           ${b.ergebnis ? `<div class="wb-ergebnis"><strong>Ergebnis:</strong> ${textToBullets(b.ergebnis)}</div>` : ''}
-          ${b.naechsteSchritte ? `<div class="wb-next-steps"><strong>Neu:</strong> ${textToBullets(b.naechsteSchritte)}</div>` : ''}
+          ${b.naechsteSchritte ? `<div class="wb-next-steps"><strong>Daniel:</strong> ${textToBullets(b.naechsteSchritte)}</div>` : ''}
+          ${b.todosMarco ? `<div class="wb-marco-steps"><strong>Marco:</strong> ${textToBullets(b.todosMarco)}</div>` : ''}
         </div>
       </div>
     </div>
@@ -156,6 +429,13 @@ const SEGMENT_ICONS = {
   'Schreiner': 'T', 'Maler': 'M', 'Zimmerei': 'H',
   'Fensterbau': 'F', 'Fassadenbau': 'Fa', 'Architekt': 'A',
   'Generalunternehmer': 'GU', 'Handel': 'D', 'Sonstiges': 'X'
+};
+
+// Segment-Farben (gleich wie im Ranking)
+const SEG_FARBEN_RGB = {
+  'Architekt': [37, 99, 235], 'Maler': [220, 38, 38], 'Zimmerei': [22, 163, 74],
+  'Fensterbau': [147, 51, 234], 'Schreiner': [202, 138, 4], 'Fassadenbau': [8, 145, 178],
+  'Handel': [234, 88, 12], 'Generalunternehmer': [79, 70, 229], 'Sonstiges': [107, 114, 128]
 };
 
 function toggleExportDropdown() {
@@ -175,7 +455,8 @@ function berechneSummary(data) {
   const besuche = data.besuche || [];
   const firmen = new Set(besuche.map(b => b.firma).filter(Boolean));
   const produkteAll = [];
-  const followUps = [];
+  const followUpsDaniel = [];
+  const followUpsMarco = [];
   const marktinfos = [];
   const segmente = {};
 
@@ -187,7 +468,10 @@ function berechneSummary(data) {
       });
     }
     if (b.naechsteSchritte) {
-      followUps.push({ firma: b.firma || 'Intern', text: b.naechsteSchritte, datum: b.datum });
+      followUpsDaniel.push({ firma: b.firma || 'Intern', text: b.naechsteSchritte, datum: b.datum });
+    }
+    if (b.todosMarco) {
+      followUpsMarco.push({ firma: b.firma || 'Intern', text: b.todosMarco, datum: b.datum });
     }
     if (b.ergebnis) {
       marktinfos.push({ firma: b.firma || '', text: b.ergebnis });
@@ -202,11 +486,15 @@ function berechneSummary(data) {
   const topProdukte = Object.entries(produktCount)
     .sort((a, b) => b[1] - a[1]).slice(0, 5);
 
-  return { firmen, produkteAll, followUps, marktinfos, segmente, topProdukte };
+  // Segment-Ranking sortiert
+  const segmentRanking = Object.entries(segmente)
+    .sort((a, b) => b[1] - a[1]);
+
+  return { firmen, produkteAll, followUpsDaniel, followUpsMarco, marktinfos, segmente, segmentRanking, topProdukte };
 }
 
 // ============================================================
-// PDF EXPORT (jsPDF)
+// PDF EXPORT (jsPDF) - mit To-Do-Split + Segment-Ranking
 // ============================================================
 function exportPDF() {
   if (!wochenberichtData) { showToast('Keine Daten geladen', 'error'); return; }
@@ -225,6 +513,8 @@ function exportPDF() {
   const GRUEN_HELL = [232, 245, 237];
   const AKZENT = [245, 166, 35];
   const AKZENT_HELL = [254, 249, 220];
+  const BLAU = [37, 99, 235];
+  const BLAU_HELL = [239, 246, 255];
   const TEXT_DUNKEL = [26, 26, 26];
   const TEXT_GRAU = [107, 114, 128];
   const WEISS = [255, 255, 255];
@@ -235,7 +525,6 @@ function exportPDF() {
   function checkPage(needed) {
     if (y + needed > 275) {
       pdf.addPage();
-      // Mini-Header ab Seite 2
       pdf.setFillColor(...GRUEN);
       pdf.rect(0, 0, 210, 3, 'F');
       pdf.setFontSize(8);
@@ -249,7 +538,6 @@ function exportPDF() {
   // Gruener Header
   pdf.setFillColor(...GRUEN);
   pdf.rect(0, 0, 210, 48, 'F');
-  // Akzent-Streifen
   pdf.setFillColor(...AKZENT);
   pdf.rect(0, 48, 210, 2, 'F');
 
@@ -258,7 +546,6 @@ function exportPDF() {
   pdf.setFontSize(26);
   pdf.setTextColor(...WEISS);
   pdf.text('Daniel Pfister', 15, 22);
-
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(10);
   pdf.setTextColor(200, 230, 210);
@@ -297,7 +584,7 @@ function exportPDF() {
   pdf.text('  ZUSAMMENFASSUNG', 15, y + 6.5);
   y += 14;
 
-  // Metriken-Kacheln (groesser, mehr Platz)
+  // Metriken-Kacheln
   const metriken = [
     [String(stats.totalBesuche || 0), 'Aktivitaeten'],
     [String(stats.neukunden || 0), 'Neukunden'],
@@ -308,20 +595,16 @@ function exportPDF() {
 
   metriken.forEach(([zahl, label], i) => {
     const x = 15 + i * (kW + kGap);
-    // Kachel
     pdf.setFillColor(...WEISS);
     pdf.setDrawColor(...BORDER);
     pdf.setLineWidth(0.4);
     pdf.rect(x, y, kW, kH, 'DF');
-    // Gruener Akzent oben
     pdf.setFillColor(...GRUEN);
     pdf.rect(x, y, kW, 2.5, 'F');
-    // Zahl
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(24);
     pdf.setTextColor(...GRUEN);
     pdf.text(zahl, x + kW / 2, y + 17, { align: 'center' });
-    // Label
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(7);
     pdf.setTextColor(...TEXT_GRAU);
@@ -329,67 +612,96 @@ function exportPDF() {
   });
   y += kH + 10;
 
-  // Zwei-Spalten: Segmente + Top-Produkte
-  const spY = y;
-  // Links: Segmente
-  if (Object.keys(summary.segmente).length > 0) {
+  // === SEGMENT-RANKING (NEU - als sortierte Liste mit Balken) ===
+  if (summary.segmentRanking.length > 0) {
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(10);
     pdf.setTextColor(...GRUEN_DUNKEL);
-    pdf.text('Segmentverteilung', 16, y);
+    pdf.text('Segmentverteilung (Ranking)', 16, y);
     y += 7;
-    Object.entries(summary.segmente)
-      .sort((a, b) => b[1] - a[1])
-      .forEach(([seg, cnt]) => {
-        const k = SEGMENT_ICONS[seg] || 'X';
-        pdf.setFillColor(...GRUEN);
-        pdf.circle(20, y - 1, 2.5, 'F');
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(5);
-        pdf.setTextColor(...WEISS);
-        pdf.text(k, 20, y - 0.2, { align: 'center' });
-        pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(9);
-        pdf.setTextColor(...TEXT_DUNKEL);
-        pdf.text(`${seg} (${cnt})`, 25, y);
-        y += 6;
-      });
+
+    const maxSeg = summary.segmentRanking[0][1];
+    summary.segmentRanking.forEach(([seg, cnt], idx) => {
+      checkPage(8);
+      const prozent = Math.round(cnt / besuche.length * 100);
+      const balkenBreite = Math.round(cnt / maxSeg * 80); // max 80mm Balken
+      const farbe = SEG_FARBEN_RGB[seg] || [107, 114, 128];
+
+      // Rang
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
+      pdf.setTextColor(...TEXT_GRAU);
+      pdf.text(`${idx + 1}.`, 18, y);
+
+      // Segment-Icon Kreis
+      pdf.setFillColor(...farbe);
+      pdf.circle(24, y - 1, 2.5, 'F');
+      const ik = SEGMENT_ICONS[seg] || 'X';
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(5);
+      pdf.setTextColor(...WEISS);
+      pdf.text(ik, 24, y - 0.2, { align: 'center' });
+
+      // Segmentname
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      pdf.setTextColor(...TEXT_DUNKEL);
+      pdf.text(seg, 29, y);
+
+      // Balken
+      pdf.setFillColor(235, 237, 240);
+      pdf.rect(60, y - 2.5, 80, 3.5, 'F');
+      pdf.setFillColor(...farbe);
+      pdf.rect(60, y - 2.5, balkenBreite, 3.5, 'F');
+
+      // Zahl + Prozent
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
+      pdf.setTextColor(...farbe);
+      pdf.text(`${cnt}`, 144, y);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(7);
+      pdf.setTextColor(...TEXT_GRAU);
+      pdf.text(`(${prozent}%)`, 151, y);
+
+      y += 6;
+    });
+    y += 4;
   }
 
-  // Rechts: Top-Produkte
-  let prodY = spY;
+  // Rechts daneben: Top-Produkte (nur wenn Platz)
+  // (Produkte kommen jetzt unter dem Ranking)
   if (summary.topProdukte.length > 0) {
+    checkPage(20);
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(10);
     pdf.setTextColor(...GRUEN_DUNKEL);
-    pdf.text('Top Produkte', 110, prodY);
-    prodY += 7;
+    pdf.text('Top Produkte', 16, y);
+    y += 7;
     summary.topProdukte.forEach(([prod, cnt]) => {
-      // Gruener Punkt statt Unicode-Bullet
       pdf.setFillColor(...GRUEN);
-      pdf.circle(113, prodY - 1.2, 1.2, 'F');
+      pdf.circle(19, y - 1.2, 1.2, 'F');
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(9);
       pdf.setTextColor(...TEXT_DUNKEL);
-      pdf.text(`${prod} (${cnt}x)`, 117, prodY);
-      prodY += 6;
+      pdf.text(`${prod} (${cnt}x)`, 23, y);
+      y += 5;
     });
+    y += 6;
   }
-  y = Math.max(y, prodY) + 10;
 
-  // === OFFENE TO-DOs ===
-  if (summary.followUps.length > 0) {
+  // === TO-DOs DANIEL ===
+  if (summary.followUpsDaniel.length > 0) {
     checkPage(30);
 
-    // Ueberschrift mit Akzent-Hintergrund (kein Unicode-Emoji!)
-    pdf.setFillColor(...AKZENT_HELL);
+    pdf.setFillColor(...GRUEN_HELL);
     pdf.rect(15, y, 180, 10, 'F');
-    pdf.setFillColor(...AKZENT);
+    pdf.setFillColor(...GRUEN);
     pdf.rect(15, y, 3, 10, 'F');
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(11);
-    pdf.setTextColor(146, 64, 14);
-    pdf.text('OFFENE TO-DOs & FOLLOW-UPS', 22, y + 7);
+    pdf.setTextColor(...GRUEN_DUNKEL);
+    pdf.text('MEINE TO-DOs (Daniel)', 22, y + 7);
     y += 14;
 
     // Tabellenkopf
@@ -403,9 +715,8 @@ function exportPDF() {
     pdf.text('Datum', 172, y + 1);
     y += 7;
 
-    summary.followUps.slice(0, 10).forEach((fu, idx) => {
+    summary.followUpsDaniel.slice(0, 12).forEach((fu, idx) => {
       checkPage(9);
-      // Abwechselnde Zeilenhintergruende
       if (idx % 2 === 0) {
         pdf.setFillColor(248, 250, 252);
         pdf.rect(15, y - 4, 180, 7, 'F');
@@ -413,6 +724,54 @@ function exportPDF() {
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(8);
       pdf.setTextColor(...GRUEN_DUNKEL);
+      pdf.text(fu.firma.substring(0, 28), 18, y);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      pdf.setTextColor(...TEXT_DUNKEL);
+      const txt = fu.text.length > 65 ? fu.text.substring(0, 65) + '...' : fu.text;
+      pdf.text(txt.replace(/\n/g, ' '), 62, y);
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(...TEXT_GRAU);
+      pdf.text(formatDatumKurz(fu.datum), 172, y);
+      y += 7;
+    });
+    y += 6;
+  }
+
+  // === TO-DOs MARCO ===
+  if (summary.followUpsMarco.length > 0) {
+    checkPage(30);
+
+    pdf.setFillColor(...BLAU_HELL);
+    pdf.rect(15, y, 180, 10, 'F');
+    pdf.setFillColor(...BLAU);
+    pdf.rect(15, y, 3, 10, 'F');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(11);
+    pdf.setTextColor(30, 58, 138);
+    pdf.text('AUFGABEN FUER MARCO', 22, y + 7);
+    y += 14;
+
+    // Tabellenkopf
+    pdf.setFillColor(...BLAU);
+    pdf.rect(15, y - 3, 180, 7, 'F');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8);
+    pdf.setTextColor(...WEISS);
+    pdf.text('Kunde', 18, y + 1);
+    pdf.text('Aktion', 62, y + 1);
+    pdf.text('Datum', 172, y + 1);
+    y += 7;
+
+    summary.followUpsMarco.slice(0, 12).forEach((fu, idx) => {
+      checkPage(9);
+      if (idx % 2 === 0) {
+        pdf.setFillColor(245, 247, 255);
+        pdf.rect(15, y - 4, 180, 7, 'F');
+      }
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
+      pdf.setTextColor(30, 58, 138);
       pdf.text(fu.firma.substring(0, 28), 18, y);
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(8);
@@ -470,7 +829,8 @@ function exportPDF() {
       // Icon-Kreis + Firma
       const seg = b.segment || 'Sonstiges';
       const ik = SEGMENT_ICONS[seg] || 'X';
-      pdf.setFillColor(...GRUEN);
+      const segFarbe = SEG_FARBEN_RGB[seg] || [107, 114, 128];
+      pdf.setFillColor(...segFarbe);
       pdf.circle(20, y, 2.5, 'F');
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(4.5);
@@ -483,7 +843,6 @@ function exportPDF() {
       const firmaText = b.firma || 'Unbekannt';
       pdf.text(firmaText, 25, y + 1);
 
-      // Kontakt + Segment rechts
       if (b.kontaktperson) {
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(8);
@@ -492,18 +851,18 @@ function exportPDF() {
       }
       if (b.segment) {
         pdf.setFontSize(7);
-        pdf.setTextColor(...TEXT_GRAU);
+        pdf.setTextColor(...segFarbe);
         pdf.text(b.segment, 190, y + 1, { align: 'right' });
       }
       y += 7;
 
-      // Detail-Felder (identisch mit Word-Export)
-      // marker: [hintergrund, streifen-links] oder null
+      // Detail-Felder
       const felder = [
         ['Themen', b.themen, null],
         ['Produkte', b.produkte, null],
         ['Ergebnis', b.ergebnis, [GRUEN_HELL, GRUEN]],
-        ['Naechste Schritte', b.naechsteSchritte, [AKZENT_HELL, AKZENT]],
+        ['Daniel To-Do', b.naechsteSchritte, [AKZENT_HELL, AKZENT]],
+        ['Marco To-Do', b.todosMarco, [BLAU_HELL, BLAU]],
         ['Stellungnahme', b.stellungnahme, null],
       ];
 
@@ -513,15 +872,13 @@ function exportPDF() {
 
         const yVor = y;
 
-        // Label
-        const labelColor = highlight ? highlight[1] : GRUEN_DUNKEL;
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(8);
+        const labelColor = highlight ? highlight[1] : GRUEN_DUNKEL;
         pdf.setTextColor(...labelColor);
         pdf.text(`${label}:`, 25, y);
         y += 4.5;
 
-        // Wert (mehrzeilig)
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(8);
         pdf.setTextColor(...TEXT_DUNKEL);
@@ -533,16 +890,12 @@ function exportPDF() {
         });
         y += 1;
 
-        // Hintergrund + Streifen links (wie Word .highlight / .todo-highlight)
         if (highlight) {
           const blockH = y - yVor + 1;
-          // Hintergrund
           pdf.setFillColor(...highlight[0]);
           pdf.rect(21, yVor - 3, 172, blockH, 'F');
-          // Streifen links
           pdf.setFillColor(...highlight[1]);
           pdf.rect(21, yVor - 3, 2, blockH, 'F');
-          // Text nochmal drueber (weil Hintergrund den Text ueberdeckt)
           pdf.setFont('helvetica', 'bold');
           pdf.setFontSize(8);
           pdf.setTextColor(...highlight[1]);
@@ -572,7 +925,7 @@ function exportPDF() {
     y += 5;
   });
 
-  // Footer auf jeder Seite: "Seite X von Y"
+  // Footer auf jeder Seite
   const pageCount = pdf.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     pdf.setPage(i);
@@ -586,17 +939,17 @@ function exportPDF() {
     pdf.text(`Seite ${i} von ${pageCount}`, 190, 287, { align: 'right' });
   }
 
-  // Download
   pdf.save(`Wochenbericht_KW${data.kw}_${data.jahr}.pdf`);
   showToast('PDF-Export heruntergeladen', 'success');
 }
 
 // ============================================================
-// WORD EXPORT (mit Executive Summary)
+// WORD EXPORT - mit To-Do-Split + Segment-Ranking
 // ============================================================
 function exportWord() {
   const data = wochenberichtData;
   if (!data) return;
+
   const stats = data.stats || {};
   const summary = berechneSummary(data);
 
@@ -629,6 +982,7 @@ h3 { font-size: 11pt; color: #0e3d25; margin-top: 12pt; margin-bottom: 4pt; }
 table { border-collapse: collapse; width: 100%; margin: 8pt 0; }
 td, th { padding: 5pt 10pt; vertical-align: top; text-align: left; }
 th { background-color: #1a5c3a; color: white; font-size: 9pt; }
+th.marco { background-color: #2563eb; }
 .header-bg { background-color: #1a5c3a; color: white; padding: 12pt 16pt; }
 .header-bg h1 { color: white; margin: 0; }
 .header-bg p { color: #c8e6d2; margin: 4pt 0 0 0; }
@@ -638,19 +992,21 @@ th { background-color: #1a5c3a; color: white; font-size: 9pt; }
 .stat-label { font-size: 8pt; color: #6b7280; }
 .highlight { background: #e8f5ed; padding: 6pt 10pt; border-left: 4px solid #1a5c3a; margin: 6pt 0; }
 .todo-highlight { background: #fef9c3; padding: 6pt 10pt; border-left: 4px solid #f5a623; margin: 6pt 0; }
-.todo-title { background: #fef9c3; padding: 8pt; font-size: 13pt; font-weight: bold; color: #92400e; }
+.marco-highlight { background: #eff6ff; padding: 6pt 10pt; border-left: 4px solid #2563eb; margin: 6pt 0; }
+.todo-title-daniel { background: #e8f5ed; padding: 8pt; font-size: 13pt; font-weight: bold; color: #0e3d25; border-left: 4px solid #1a5c3a; }
+.todo-title-marco { background: #eff6ff; padding: 8pt; font-size: 13pt; font-weight: bold; color: #1e3a8a; border-left: 4px solid #2563eb; }
 .label-text { font-weight: bold; color: #0e3d25; font-size: 9pt; }
 .muted { color: #6b7280; font-size: 9pt; }
 .segment-badge { color: #6b7280; font-size: 9pt; }
+.ranking-bar { display: inline-block; height: 12pt; border-radius: 2pt; margin-right: 6pt; vertical-align: middle; }
 </style></head><body>`;
 
-  // Footer-Definition (Seitenzahlen fuer Word)
+  // Footer
   html += `<div style="mso-element:footer" id="f1">
     <p class="MsoFooter"><span style="color:#6b7280;">Daniel Pfister | Diotrol AG | Vertraulich</span>
     <span style="float:right; color:#6b7280;">Seite <span style="mso-field-code:'PAGE'"></span><!--[if gte mso 9]><span style="mso-element:field-begin"></span> PAGE <span style="mso-element:field-end"></span><![endif]--></span></p>
   </div>`;
 
-  // Content in Section wrappen
   html += '<div class="Section1">';
 
   // Header
@@ -660,7 +1016,6 @@ th { background-color: #1a5c3a; color: white; font-size: 9pt; }
   </div>
   <div class="accent-bar"></div>`;
 
-  // Titel + Info
   html += `<h1 style="margin-top:12pt;">Wochenbericht KW ${data.kw}</h1>`;
   html += `<p class="muted">Daniel Pfister | Erstellt: ${new Date().toLocaleDateString('de-CH')}</p>`;
 
@@ -677,32 +1032,67 @@ th { background-color: #1a5c3a; color: white; font-size: 9pt; }
   });
   html += `</tr></table>`;
 
-  // Segmente + Produkte nebeneinander
-  html += '<table><tr><td style="width:50%; vertical-align:top;">';
-  if (Object.keys(summary.segmente).length > 0) {
-    html += '<p class="label-text">Segmentverteilung:</p>';
-    Object.entries(summary.segmente).sort((a,b) => b[1]-a[1]).forEach(([seg, cnt]) => {
+  // Segment-Ranking (NEU - als sortiertes Ranking mit Balken)
+  if (summary.segmentRanking.length > 0) {
+    const SEG_FARBEN_HEX = {
+      'Architekt': '#2563eb', 'Maler': '#dc2626', 'Zimmerei': '#16a34a',
+      'Fensterbau': '#9333ea', 'Schreiner': '#ca8a04', 'Fassadenbau': '#0891b2',
+      'Handel': '#ea580c', 'Generalunternehmer': '#4f46e5', 'Sonstiges': '#6b7280'
+    };
+    const maxSeg = summary.segmentRanking[0][1];
+
+    html += '<p class="label-text" style="font-size:11pt;">Segmentverteilung (Ranking):</p>';
+    html += '<table style="width:100%;">';
+    summary.segmentRanking.forEach(([seg, cnt], idx) => {
+      const prozent = Math.round(cnt / (data.besuche || []).length * 100);
+      const balkenBreite = Math.round(cnt / maxSeg * 100);
+      const farbe = SEG_FARBEN_HEX[seg] || '#6b7280';
       const emoji = SEG_EMOJI[seg] || '\u{1F4CB}';
-      html += `<p style="margin:2pt 0 2pt 8pt; font-size:9pt;">${emoji} ${seg} (${cnt})</p>`;
+      html += `<tr>
+        <td style="width:5%; font-weight:bold; color:#6b7280; font-size:9pt; padding:3pt;">${idx + 1}.</td>
+        <td style="width:5%; font-size:9pt; padding:3pt;">${emoji}</td>
+        <td style="width:25%; font-size:9pt; padding:3pt;">${seg}</td>
+        <td style="width:45%; padding:3pt;">
+          <span class="ranking-bar" style="width:${balkenBreite}%; background:${farbe};">&nbsp;</span>
+        </td>
+        <td style="width:10%; font-weight:bold; color:${farbe}; font-size:9pt; padding:3pt; text-align:right;">${cnt}</td>
+        <td style="width:10%; color:#6b7280; font-size:8pt; padding:3pt;">(${prozent}%)</td>
+      </tr>`;
     });
+    html += '</table>';
   }
-  html += '</td><td style="width:50%; vertical-align:top;">';
+
+  // Top-Produkte
   if (summary.topProdukte.length > 0) {
     html += '<p class="label-text">Top Produkte:</p>';
     summary.topProdukte.forEach(([prod, cnt]) => {
       html += `<p style="margin:2pt 0 2pt 8pt; font-size:9pt; color:#1a5c3a;">\u25CF ${prod} (${cnt}x)</p>`;
     });
   }
-  html += '</td></tr></table>';
 
-  // To-Dos / Follow-ups
-  if (summary.followUps.length > 0) {
-    html += `<div class="todo-title">\u26A1 OFFENE TO-DOs & FOLLOW-UPS</div>`;
+  // To-Dos Daniel
+  if (summary.followUpsDaniel.length > 0) {
+    html += `<div class="todo-title-daniel">\u2B50 MEINE TO-DOs (Daniel)</div>`;
     html += `<table><tr><th>Kunde</th><th>Aktion</th><th>Datum</th></tr>`;
-    summary.followUps.forEach(fu => {
+    summary.followUpsDaniel.forEach(fu => {
       const txt = fu.text.length > 100 ? fu.text.substring(0, 100) + '...' : fu.text;
       html += `<tr>
         <td style="font-weight:bold; color:#0e3d25; font-size:9pt; width:20%;">${escapeHtml(fu.firma)}</td>
+        <td style="font-size:9pt;">${escapeHtml(txt.replace(/\n/g, ' '))}</td>
+        <td style="font-size:9pt; color:#6b7280; width:12%;">${formatDatumKurz(fu.datum)}</td>
+      </tr>`;
+    });
+    html += '</table>';
+  }
+
+  // To-Dos Marco
+  if (summary.followUpsMarco.length > 0) {
+    html += `<div class="todo-title-marco">\u{1F454} AUFGABEN FUER MARCO</div>`;
+    html += `<table><tr><th class="marco">Kunde</th><th class="marco">Aktion</th><th class="marco">Datum</th></tr>`;
+    summary.followUpsMarco.forEach(fu => {
+      const txt = fu.text.length > 100 ? fu.text.substring(0, 100) + '...' : fu.text;
+      html += `<tr>
+        <td style="font-weight:bold; color:#1e3a8a; font-size:9pt; width:20%;">${escapeHtml(fu.firma)}</td>
         <td style="font-size:9pt;">${escapeHtml(txt.replace(/\n/g, ' '))}</td>
         <td style="font-size:9pt; color:#6b7280; width:12%;">${formatDatumKurz(fu.datum)}</td>
       </tr>`;
@@ -714,7 +1104,6 @@ th { background-color: #1a5c3a; color: white; font-size: 9pt; }
   html += '<br clear="all" style="page-break-before:always">';
   html += `<h2>\u{1F4C5} DETAILBERICHT KW ${data.kw}</h2>`;
 
-  // Nach Tag gruppieren
   const tage = {};
   (data.besuche || []).forEach(b => {
     const tag = b.datum ? getWochentag(b.datum) : (b.tag || 'Unbekannt');
@@ -738,13 +1127,13 @@ th { background-color: #1a5c3a; color: white; font-size: 9pt; }
       if (b.themen) html += `<p><span class="label-text">\u{1F4AC} Themen:</span><br>${escapeHtml(b.themen).replace(/\n/g,'<br>')}</p>`;
       if (b.produkte) html += `<p><span class="label-text">\u{1F4E6} Produkte:</span> ${escapeHtml(b.produkte)}</p>`;
       if (b.ergebnis) html += `<div class="highlight"><span class="label-text">\u{1F3AF} Ergebnis:</span><br>${escapeHtml(b.ergebnis).replace(/\n/g,'<br>')}</div>`;
-      if (b.naechsteSchritte) html += `<div class="todo-highlight"><span class="label-text">\u26A1 Naechste Schritte:</span><br>${escapeHtml(b.naechsteSchritte).replace(/\n/g,'<br>')}</div>`;
+      if (b.naechsteSchritte) html += `<div class="todo-highlight"><span class="label-text">\u2B50 Daniel To-Do:</span><br>${escapeHtml(b.naechsteSchritte).replace(/\n/g,'<br>')}</div>`;
+      if (b.todosMarco) html += `<div class="marco-highlight"><span class="label-text">\u{1F454} Marco To-Do:</span><br>${escapeHtml(b.todosMarco).replace(/\n/g,'<br>')}</div>`;
       if (b.stellungnahme) html += `<p class="muted"><span class="label-text">\u{1F4DD} Stellungnahme:</span><br>${escapeHtml(b.stellungnahme).replace(/\n/g,'<br>')}</p>`;
       html += '<hr style="border:none; border-top:1px solid #e5e7eb; margin:8pt 0;">';
     });
   });
 
-  // Section schliessen
   html += '</div>';
   html += '</body></html>';
 
@@ -771,11 +1160,32 @@ function generateReportText() {
   if (stats.fokusProdukte) text += `Fokus-Produkte: ${stats.fokusProdukte}\n`;
   text += '\n';
 
-  // To-Dos
-  if (summary.followUps.length > 0) {
-    text += `OFFENE TO-DOs\n`;
+  // Segment-Ranking
+  if (summary.segmentRanking.length > 0) {
+    text += `SEGMENTVERTEILUNG\n`;
     text += `${'-'.repeat(40)}\n`;
-    summary.followUps.forEach(fu => {
+    summary.segmentRanking.forEach(([seg, cnt], idx) => {
+      const prozent = Math.round(cnt / (data.besuche || []).length * 100);
+      text += `${idx + 1}. ${seg}: ${cnt} Besuche (${prozent}%)\n`;
+    });
+    text += '\n';
+  }
+
+  // To-Dos Daniel
+  if (summary.followUpsDaniel.length > 0) {
+    text += `MEINE TO-DOs (Daniel)\n`;
+    text += `${'-'.repeat(40)}\n`;
+    summary.followUpsDaniel.forEach(fu => {
+      text += `[ ] ${fu.firma}: ${fu.text.replace(/\n/g, ' ')}\n`;
+    });
+    text += '\n';
+  }
+
+  // To-Dos Marco
+  if (summary.followUpsMarco.length > 0) {
+    text += `AUFGABEN FUER MARCO\n`;
+    text += `${'-'.repeat(40)}\n`;
+    summary.followUpsMarco.forEach(fu => {
       text += `[ ] ${fu.firma}: ${fu.text.replace(/\n/g, ' ')}\n`;
     });
     text += '\n';
@@ -788,11 +1198,13 @@ function generateReportText() {
     text += `Datum: ${formatDatum(b.datum)}\n`;
     if (b.ort) text += `Ort: ${b.ort}\n`;
     if (b.kontaktperson) text += `Kontakt: ${b.kontaktperson}\n`;
+    if (b.segment) text += `Segment: ${b.segment}\n`;
     if (b.besuchstyp) text += `Besuchstyp: ${b.besuchstyp}\n`;
     if (b.produkte) text += `Produkte: ${b.produkte}\n`;
     if (b.themen) text += `\nThemen:\n${b.themen}\n`;
     if (b.ergebnis) text += `\nErgebnis:\n${b.ergebnis}\n`;
-    if (b.naechsteSchritte) text += `\nNaechste Schritte:\n${b.naechsteSchritte}\n`;
+    if (b.naechsteSchritte) text += `\nDaniel To-Do:\n${b.naechsteSchritte}\n`;
+    if (b.todosMarco) text += `\nMarco To-Do:\n${b.todosMarco}\n`;
     if (b.stellungnahme) text += `\nStellungnahme:\n${b.stellungnahme}\n`;
     text += '\n';
   });
@@ -810,6 +1222,54 @@ function exportText() {
 function exportEmail() {
   const text = generateReportText();
   const subject = encodeURIComponent(`Wochenbericht KW ${wochenberichtData?.kw || ''} / ${wochenberichtData?.jahr || ''}`);
+  const body = encodeURIComponent(text);
+  window.open(`mailto:?subject=${subject}&body=${body}`, '_self');
+}
+
+// === MARCO-BERICHT (kompakt, nur fuer den Chef) ===
+function exportMarcoReport() {
+  if (!wochenberichtData) { showToast('Keine Daten geladen', 'error'); return; }
+  const data = wochenberichtData;
+  const stats = data.stats || {};
+  const summary = berechneSummary(data);
+
+  let text = `WOCHENBERICHT KW ${data.kw} - Zusammenfassung fuer Marco\n`;
+  text += `${'='.repeat(50)}\n\n`;
+  text += `Total Besuche: ${stats.totalBesuche || 0} | Neukunden: ${stats.neukunden || 0} | Kunden besucht: ${summary.firmen.size}\n\n`;
+
+  // Segment-Ranking
+  if (summary.segmentRanking.length > 0) {
+    text += `SEGMENTVERTEILUNG:\n`;
+    summary.segmentRanking.forEach(([seg, cnt], idx) => {
+      const prozent = Math.round(cnt / (data.besuche || []).length * 100);
+      text += `  ${idx + 1}. ${seg}: ${cnt} (${prozent}%)\n`;
+    });
+    text += '\n';
+  }
+
+  // Marcos Aufgaben
+  if (summary.followUpsMarco.length > 0) {
+    text += `DEINE AUFGABEN:\n`;
+    text += `${'-'.repeat(40)}\n`;
+    summary.followUpsMarco.forEach(fu => {
+      text += `[ ] [${fu.firma}]: ${fu.text.replace(/\n/g, ' ')}\n`;
+    });
+    text += '\n';
+  }
+
+  // Top Highlights
+  text += `TOP-HIGHLIGHTS:\n`;
+  text += `${'-'.repeat(40)}\n`;
+  (data.besuche || []).slice(0, 5).forEach(b => {
+    if (b.ergebnis) {
+      const kurz = b.ergebnis.length > 80 ? b.ergebnis.substring(0, 80) + '...' : b.ergebnis;
+      text += `- ${b.firma}: ${kurz.replace(/\n/g, ' ')}\n`;
+    }
+  });
+
+  text += `\n---\nDaniel Pfister | Diotrol AG | KW ${data.kw}`;
+
+  const subject = encodeURIComponent(`Wochenbericht KW ${data.kw} - Zusammenfassung`);
   const body = encodeURIComponent(text);
   window.open(`mailto:?subject=${subject}&body=${body}`, '_self');
 }
