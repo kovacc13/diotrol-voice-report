@@ -191,9 +191,9 @@ function renderSegmentRanking(data) {
 
   // Segment-Farben fuer die Balken
   const SEG_FARBEN = {
-    'Architekt': '#2563eb', 'Maler': '#dc2626', 'Zimmerei': '#16a34a',
-    'Fensterbau': '#9333ea', 'Schreiner': '#ca8a04', 'Fassadenbau': '#0891b2',
-    'Handel': '#ea580c', 'Generalunternehmer': '#4f46e5', 'Sonstiges': '#6b7280'
+    'Architekt': '#5b7fa6', 'Maler': '#b87a6b', 'Zimmerei': '#6a9b6a',
+    'Fensterbau': '#8b7baa', 'Schreiner': '#a89060', 'Fassadenbau': '#6a9b9b',
+    'Handel': '#c4956a', 'Generalunternehmer': '#7a7a9b', 'Sonstiges': '#8a8a8a'
   };
 
   container.innerHTML = `
@@ -464,9 +464,9 @@ const SEGMENT_ICONS = {
 
 // Segment-Farben (gleich wie im Ranking)
 const SEG_FARBEN_RGB = {
-  'Architekt': [37, 99, 235], 'Maler': [220, 38, 38], 'Zimmerei': [22, 163, 74],
-  'Fensterbau': [147, 51, 234], 'Schreiner': [202, 138, 4], 'Fassadenbau': [8, 145, 178],
-  'Handel': [234, 88, 12], 'Generalunternehmer': [79, 70, 229], 'Sonstiges': [107, 114, 128]
+  'Architekt': [91, 127, 166], 'Maler': [184, 122, 107], 'Zimmerei': [106, 155, 106],
+  'Fensterbau': [139, 123, 170], 'Schreiner': [168, 144, 96], 'Fassadenbau': [106, 155, 155],
+  'Handel': [196, 149, 106], 'Generalunternehmer': [122, 122, 155], 'Sonstiges': [138, 138, 138]
 };
 
 function toggleExportDropdown() {
@@ -562,8 +562,8 @@ function exportPDF() {
   const GRUEN_HELL = [232, 245, 237];
   const AKZENT = [245, 166, 35];
   const AKZENT_HELL = [254, 249, 220];
-  const BLAU = [37, 99, 235];
-  const BLAU_HELL = [239, 246, 255];
+  const BLAU = [91, 127, 166];
+  const BLAU_HELL = [240, 245, 250];
   const TEXT_DUNKEL = [26, 26, 26];
   const TEXT_GRAU = [107, 114, 128];
   const WEISS = [255, 255, 255];
@@ -797,7 +797,7 @@ function exportPDF() {
     pdf.rect(15, y, 3, 10, 'F');
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(11);
-    pdf.setTextColor(30, 58, 138);
+    pdf.setTextColor(70, 95, 130);
     pdf.text('AUFGABEN FUER MARCO', 22, y + 7);
     y += 14;
 
@@ -815,12 +815,12 @@ function exportPDF() {
     summary.followUpsMarco.slice(0, 12).forEach((fu, idx) => {
       checkPage(9);
       if (idx % 2 === 0) {
-        pdf.setFillColor(245, 247, 255);
+        pdf.setFillColor(245, 248, 252);
         pdf.rect(15, y - 4, 180, 7, 'F');
       }
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(8);
-      pdf.setTextColor(30, 58, 138);
+      pdf.setTextColor(70, 95, 130);
       pdf.text(fu.firma.substring(0, 28), 18, y);
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(8);
@@ -1031,7 +1031,7 @@ h3 { font-size: 11pt; color: #0e3d25; margin-top: 12pt; margin-bottom: 4pt; }
 table { border-collapse: collapse; width: 100%; margin: 8pt 0; }
 td, th { padding: 5pt 10pt; vertical-align: top; text-align: left; }
 th { background-color: #1a5c3a; color: white; font-size: 9pt; }
-th.marco { background-color: #2563eb; }
+th.marco { background-color: #5b7fa6; }
 .header-bg { background-color: #1a5c3a; color: white; padding: 12pt 16pt; }
 .header-bg h1 { color: white; margin: 0; }
 .header-bg p { color: #c8e6d2; margin: 4pt 0 0 0; }
@@ -1041,9 +1041,9 @@ th.marco { background-color: #2563eb; }
 .stat-label { font-size: 8pt; color: #6b7280; }
 .highlight { background: #e8f5ed; padding: 6pt 10pt; border-left: 4px solid #1a5c3a; margin: 6pt 0; }
 .todo-highlight { background: #fef9c3; padding: 6pt 10pt; border-left: 4px solid #f5a623; margin: 6pt 0; }
-.marco-highlight { background: #eff6ff; padding: 6pt 10pt; border-left: 4px solid #2563eb; margin: 6pt 0; }
+.marco-highlight { background: #f0f5fa; padding: 6pt 10pt; border-left: 4px solid #5b7fa6; margin: 6pt 0; }
 .todo-title-daniel { background: #e8f5ed; padding: 8pt; font-size: 13pt; font-weight: bold; color: #0e3d25; border-left: 4px solid #1a5c3a; }
-.todo-title-marco { background: #eff6ff; padding: 8pt; font-size: 13pt; font-weight: bold; color: #1e3a8a; border-left: 4px solid #2563eb; }
+.todo-title-marco { background: #f0f5fa; padding: 8pt; font-size: 13pt; font-weight: bold; color: #465f82; border-left: 4px solid #5b7fa6; }
 .label-text { font-weight: bold; color: #0e3d25; font-size: 9pt; }
 .muted { color: #6b7280; font-size: 9pt; }
 .segment-badge { color: #6b7280; font-size: 9pt; }
@@ -1084,9 +1084,9 @@ th.marco { background-color: #2563eb; }
   // Segment-Ranking (NEU - als sortiertes Ranking mit Balken)
   if (summary.segmentRanking.length > 0) {
     const SEG_FARBEN_HEX = {
-      'Architekt': '#2563eb', 'Maler': '#dc2626', 'Zimmerei': '#16a34a',
-      'Fensterbau': '#9333ea', 'Schreiner': '#ca8a04', 'Fassadenbau': '#0891b2',
-      'Handel': '#ea580c', 'Generalunternehmer': '#4f46e5', 'Sonstiges': '#6b7280'
+      'Architekt': '#5b7fa6', 'Maler': '#b87a6b', 'Zimmerei': '#6a9b6a',
+      'Fensterbau': '#8b7baa', 'Schreiner': '#a89060', 'Fassadenbau': '#6a9b9b',
+      'Handel': '#c4956a', 'Generalunternehmer': '#7a7a9b', 'Sonstiges': '#8a8a8a'
     };
     const maxSeg = summary.segmentRanking[0][1];
 
@@ -1141,7 +1141,7 @@ th.marco { background-color: #2563eb; }
     summary.followUpsMarco.forEach(fu => {
       const txt = fu.text.length > 100 ? fu.text.substring(0, 100) + '...' : fu.text;
       html += `<tr>
-        <td style="font-weight:bold; color:#1e3a8a; font-size:9pt; width:20%;">${escapeHtml(fu.firma)}</td>
+        <td style="font-weight:bold; color:#465f82; font-size:9pt; width:20%;">${escapeHtml(fu.firma)}</td>
         <td style="font-size:9pt;">${escapeHtml(txt.replace(/\n/g, ' '))}</td>
         <td style="font-size:9pt; color:#6b7280; width:12%;">${formatDatumKurz(fu.datum)}</td>
       </tr>`;

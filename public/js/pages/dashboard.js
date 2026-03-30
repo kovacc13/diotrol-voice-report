@@ -37,9 +37,9 @@ async function renderDashboard() {
   const maxSegKW = segmentRankingKW[0] ? segmentRankingKW[0][1] : 1;
 
   const SEG_FARBEN_DASH = {
-    'Architekt': '#2563eb', 'Maler': '#dc2626', 'Zimmerei': '#16a34a',
-    'Fensterbau': '#9333ea', 'Schreiner': '#ca8a04', 'Fassadenbau': '#0891b2',
-    'Handel': '#ea580c', 'Generalunternehmer': '#4f46e5', 'Sonstiges': '#6b7280'
+    'Architekt': '#5b7fa6', 'Maler': '#b87a6b', 'Zimmerei': '#6a9b6a',
+    'Fensterbau': '#8b7baa', 'Schreiner': '#a89060', 'Fassadenbau': '#6a9b9b',
+    'Handel': '#c4956a', 'Generalunternehmer': '#7a7a9b', 'Sonstiges': '#8a8a8a'
   };
 
   const SEGMENT_ICONS_DASH = {

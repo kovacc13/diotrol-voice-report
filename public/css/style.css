@@ -1219,13 +1219,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .wb-marco-steps {
-  color: #2563eb;
+  color: #5b7fa6;
   font-weight: 600;
   font-size: 13px;
   margin-top: 8px;
-  background: #eff6ff;
+  background: #f0f5fa;
   padding: 6px 10px;
-  border-left: 3px solid #2563eb;
+  border-left: 3px solid #5b7fa6;
   border-radius: 4px;
 }
 
@@ -1338,7 +1338,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .todo-header-marco {
-  border-bottom-color: #2563eb;
+  border-bottom-color: #5b7fa6;
 }
 
 .todo-counter {
