@@ -225,10 +225,28 @@ function renderSegmentRanking(data) {
 // ============================================================
 // TO-DO LISTEN (Daniel + Marco)
 // ============================================================
+// Erkennung ob ein To-Do fuer Marco ist (auch in alten Daten ohne todosMarco-Feld)
+function istMarcoTodo(text) {
+  const lower = text.toLowerCase();
+  // Signalwoerter: Name "Marco" am Anfang oder als Subjekt, Chef-Bezug
+  const marcoPatterns = [
+    /\bmarco\b/i,
+    /\bmh\b/i,
+    /\bchef\b/i,
+    /\bgeschaeftsleitung\b/i,
+    /\bvorgesetzt/i,
+    /\bfreigabe\b/i,
+    /\bbudget\s*(genehmig|freigab|anford)/i,
+    /\bintern\s+besprechen\b/i,
+    /\bmanagement\b/i
+  ];
+  return marcoPatterns.some(p => p.test(text));
+}
+
 function renderTodoListen(data) {
   const besuche = data.besuche || [];
 
-  // Daniel's To-Dos = naechsteSchritte (wie bisher)
+  // To-Dos sammeln und intelligent zuordnen
   const todosDaniel = [];
   const todosMarco = [];
 
@@ -239,15 +257,28 @@ function renderTodoListen(data) {
         .map(l => l.trim().replace(/^[\u2022\-\*]\s*/, ''))
         .filter(l => l.length > 0);
       lines.forEach(line => {
-        todosDaniel.push({
-          id: `d-${b.id}-${todosDaniel.length}`,
-          firma: b.firma || 'Intern',
-          text: line,
-          datum: b.datum,
-          besuchstyp: b.besuchstyp || b.typ || 'Besuch'
-        });
+        // Intelligente Zuordnung: Wenn "Marco" oder Chef-Signalwoerter drin stehen,
+        // gehoert es in die Marco-Liste (auch bei alten Daten ohne todosMarco-Feld)
+        if (istMarcoTodo(line)) {
+          todosMarco.push({
+            id: `m-${b.id}-${todosMarco.length}`,
+            firma: b.firma || 'Intern',
+            text: line,
+            datum: b.datum,
+            besuchstyp: b.besuchstyp || b.typ || 'Besuch'
+          });
+        } else {
+          todosDaniel.push({
+            id: `d-${b.id}-${todosDaniel.length}`,
+            firma: b.firma || 'Intern',
+            text: line,
+            datum: b.datum,
+            besuchstyp: b.besuchstyp || b.typ || 'Besuch'
+          });
+        }
       });
     }
+    // Explizites todosMarco-Feld (neue Besuche nach dem Update)
     if (b.todosMarco) {
       const lines = b.todosMarco.split('\n')
         .map(l => l.trim().replace(/^[\u2022\-\*]\s*/, ''))
@@ -468,7 +499,25 @@ function berechneSummary(data) {
       });
     }
     if (b.naechsteSchritte) {
-      followUpsDaniel.push({ firma: b.firma || 'Intern', text: b.naechsteSchritte, datum: b.datum });
+      // Auch in der Summary: Zeilen intelligent auf Daniel/Marco aufteilen
+      const lines = b.naechsteSchritte.split('\n')
+        .map(l => l.trim().replace(/^[\u2022\-\*]\s*/, ''))
+        .filter(l => l.length > 0);
+      const danielLines = [];
+      const marcoLines = [];
+      lines.forEach(line => {
+        if (istMarcoTodo(line)) {
+          marcoLines.push(line);
+        } else {
+          danielLines.push(line);
+        }
+      });
+      if (danielLines.length > 0) {
+        followUpsDaniel.push({ firma: b.firma || 'Intern', text: danielLines.join('\n'), datum: b.datum });
+      }
+      if (marcoLines.length > 0) {
+        followUpsMarco.push({ firma: b.firma || 'Intern', text: marcoLines.join('\n'), datum: b.datum });
+      }
     }
     if (b.todosMarco) {
       followUpsMarco.push({ firma: b.firma || 'Intern', text: b.todosMarco, datum: b.datum });
