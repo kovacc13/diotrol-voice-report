@@ -349,13 +349,23 @@ h1, h2, h3, h4, h5, h6 {
   cursor: pointer;
 }
 
-.stat-card:hover {
+a.stat-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--card-shadow-hover);
+  cursor: pointer;
 }
 
-.stat-card:active {
+a.stat-card:active {
   transform: translateY(0px);
+}
+
+div.stat-card {
+  cursor: default;
+}
+
+div.stat-card:hover {
+  transform: none;
+  box-shadow: var(--card-shadow);
 }
 
 .stat-card .stat-icon {
