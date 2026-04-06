@@ -9,6 +9,21 @@ let wochenberichtData = null;
 // To-Do Status (Checkboxen) - wird pro Session im Speicher gehalten
 let todoStatus = {};
 
+// Besuchs-Sortierung innerhalb eines Tages:
+// 1. Office-Eintraege zuerst
+// 2. Normale Kundenbesuche in der Mitte
+// 3. Interne Eintraege (Diotrol-Intern, Home-Office) zuletzt
+function besuchPrioritaet(b) {
+  const firma = (b.firma || '').toLowerCase();
+  if (/office|buero|büro/i.test(firma)) return 0;       // Office zuerst
+  if (/intern|home.?office|dio/i.test(firma)) return 2;  // Intern zuletzt
+  return 1;                                               // Kunden in der Mitte
+}
+
+function sortBesuche(besuche) {
+  return [...besuche].sort((a, b) => besuchPrioritaet(a) - besuchPrioritaet(b));
+}
+
 async function renderWochenbericht() {
   const main = document.getElementById('mainContent');
   const kw = getCurrentKW();
@@ -39,34 +54,34 @@ async function renderWochenbericht() {
     </div>
 
     <div class="stat-cards" id="wbStats">
-      <div class="stat-card">
+      <a class="stat-card" href="#/besuche" title="Alle Besuche anzeigen">
         <div class="stat-icon">\u{1F4CB}</div>
         <div class="stat-info">
           <div class="stat-label">Total Besuche</div>
           <div class="stat-value" id="wbTotal">-</div>
         </div>
-      </div>
-      <div class="stat-card">
+      </a>
+      <a class="stat-card" href="#/kunden" title="Neukunden anzeigen">
         <div class="stat-icon">\u{1F195}</div>
         <div class="stat-info">
           <div class="stat-label">Neukunden</div>
           <div class="stat-value" id="wbNeukunden">-</div>
         </div>
-      </div>
-      <div class="stat-card">
+      </a>
+      <a class="stat-card" href="#/kunden" title="Bestandskunden anzeigen">
         <div class="stat-icon">\u{1F504}</div>
         <div class="stat-info">
           <div class="stat-label">Bestandskunden</div>
           <div class="stat-value" id="wbBestandskunden">-</div>
         </div>
-      </div>
-      <div class="stat-card">
+      </a>
+      <a class="stat-card" href="#/kunden" title="Besuchte Kunden anzeigen">
         <div class="stat-icon">\u{1F465}</div>
         <div class="stat-info">
           <div class="stat-label">Kunden besucht</div>
           <div class="stat-value" id="wbKundenBesucht">-</div>
         </div>
-      </div>
+      </a>
     </div>
 
     <!-- Segment-Ranking -->
@@ -192,8 +207,10 @@ function renderSegmentRanking(data) {
   // Segment-Farben fuer die Balken
   const SEG_FARBEN = {
     'Architekt': '#5b7fa6', 'Maler': '#b87a6b', 'Zimmerei': '#6a9b6a',
-    'Fensterbau': '#8b7baa', 'Schreiner': '#a89060', 'Fassadenbau': '#6a9b9b',
-    'Handel': '#c4956a', 'Generalunternehmer': '#7a7a9b', 'Sonstiges': '#8a8a8a'
+    'Fensterbau': '#8b7baa', 'Schreiner': '#a89060', 'Holzbau': '#6a9b9b',
+    'Holzbauingenieure': '#5a8a7a', 'Hobelwerke': '#8a7a5a', 'Saegereien': '#7a6a5a',
+    'Handel': '#c4956a',
+    'Diotrol-Intern': '#4a7a6a', 'Office': '#6a8a9b', 'Sonstiges': '#8a8a8a'
   };
 
   container.innerHTML = `
@@ -204,7 +221,7 @@ function renderSegmentRanking(data) {
         const farbe = SEG_FARBEN[seg] || '#6b7280';
         const icon = SEGMENT_ICONS[seg] || 'X';
         return `
-          <div class="segment-ranking-row">
+          <div class="segment-ranking-row segment-ranking-clickable" onclick="filterBesucheNachSegment('${seg}')" title="Besuche fuer ${seg} anzeigen">
             <div class="segment-ranking-rank">${idx + 1}.</div>
             <div class="segment-ranking-icon" style="background:${farbe};">${icon}</div>
             <div class="segment-ranking-info">
@@ -427,7 +444,7 @@ function renderWochenberichtBesuche(besuche) {
     return;
   }
 
-  container.innerHTML = besuche.map(b => `
+  container.innerHTML = sortBesuche(besuche).map(b => `
     <div class="wb-besuch">
       <div class="wb-besuch-header">
         <span class="wb-besuch-firma">${escapeHtml(b.firma)}</span>
@@ -458,15 +475,19 @@ function renderWochenberichtBesuche(besuche) {
 // Segment-Icons (Kuerzel fuer PDF-Kreise)
 const SEGMENT_ICONS = {
   'Schreiner': 'T', 'Maler': 'M', 'Zimmerei': 'H',
-  'Fensterbau': 'F', 'Fassadenbau': 'Fa', 'Architekt': 'A',
-  'Generalunternehmer': 'GU', 'Handel': 'D', 'Sonstiges': 'X'
+  'Fensterbau': 'F', 'Holzbau': 'Hb', 'Architekt': 'A',
+  'Holzbauingenieure': 'HI', 'Hobelwerke': 'Hw', 'Saegereien': 'Sä',
+  'Handel': 'D',
+  'Diotrol-Intern': 'DI', 'Office': 'O', 'Sonstiges': 'X'
 };
 
 // Segment-Farben (gleich wie im Ranking)
 const SEG_FARBEN_RGB = {
   'Architekt': [91, 127, 166], 'Maler': [184, 122, 107], 'Zimmerei': [106, 155, 106],
-  'Fensterbau': [139, 123, 170], 'Schreiner': [168, 144, 96], 'Fassadenbau': [106, 155, 155],
-  'Handel': [196, 149, 106], 'Generalunternehmer': [122, 122, 155], 'Sonstiges': [138, 138, 138]
+  'Fensterbau': [139, 123, 170], 'Schreiner': [168, 144, 96], 'Holzbau': [106, 155, 155],
+  'Holzbauingenieure': [90, 138, 122], 'Hobelwerke': [138, 122, 90], 'Saegereien': [122, 106, 90],
+  'Handel': [196, 149, 106],
+  'Diotrol-Intern': [74, 122, 106], 'Office': [106, 138, 155], 'Sonstiges': [138, 138, 138]
 };
 
 function toggleExportDropdown() {
@@ -871,8 +892,8 @@ function exportPDF() {
     pdf.text(`${anz} Besuch${anz !== 1 ? 'e' : ''}`, 190, y + 6, { align: 'right' });
     y += 13;
 
-    // Besuche
-    tage[tag].forEach((b, idx) => {
+    // Besuche (sortiert: Office zuerst, Intern zuletzt)
+    sortBesuche(tage[tag]).forEach((b, idx) => {
       checkPage(25);
 
       // Icon-Kreis + Firma
@@ -1006,7 +1027,8 @@ function exportWord() {
   const SEG_EMOJI = {
     'Schreiner': '\u{1F6CB}', 'Maler': '\u{1F3A8}', 'Zimmerei': '\u{1F3D7}',
     'Fensterbau': '\u{1F5BC}', 'Fassadenbau': '\u{1F3D7}', 'Architekt': '\u{1F4D0}',
-    'Generalunternehmer': '\u{1F3E2}', 'Handel': '\u{1F3EA}', 'Sonstiges': '\u{1F4CB}'
+    'Generalunternehmer': '\u{1F3E2}', 'Handel': '\u{1F3EA}',
+    'Diotrol-Intern': '\u{1F3E2}', 'Office': '\u{1F4BC}', 'Sonstiges': '\u{1F4CB}'
   };
 
   let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
@@ -1086,7 +1108,8 @@ th.marco { background-color: #5b7fa6; }
     const SEG_FARBEN_HEX = {
       'Architekt': '#5b7fa6', 'Maler': '#b87a6b', 'Zimmerei': '#6a9b6a',
       'Fensterbau': '#8b7baa', 'Schreiner': '#a89060', 'Fassadenbau': '#6a9b9b',
-      'Handel': '#c4956a', 'Generalunternehmer': '#7a7a9b', 'Sonstiges': '#8a8a8a'
+      'Handel': '#c4956a', 'Generalunternehmer': '#7a7a9b',
+      'Diotrol-Intern': '#4a7a6a', 'Office': '#6a8a9b', 'Sonstiges': '#8a8a8a'
     };
     const maxSeg = summary.segmentRanking[0][1];
 
@@ -1166,7 +1189,7 @@ th.marco { background-color: #5b7fa6; }
       ${tag.toUpperCase()} <span style="float:right; font-size:9pt; font-weight:normal;">
       ${tage[tag].length} Besuch${tage[tag].length !== 1 ? 'e' : ''}</span></h2>`;
 
-    tage[tag].forEach(b => {
+    sortBesuche(tage[tag]).forEach(b => {
       const segEmoji = SEG_EMOJI[b.segment] || '\u{1F4CB}';
       html += `<h3>${segEmoji} ${escapeHtml(b.firma || 'Unbekannt')}`;
       if (b.kontaktperson) html += ` <span class="muted">| ${escapeHtml(b.kontaktperson)}</span>`;
@@ -1242,7 +1265,7 @@ function generateReportText() {
 
   text += `${'='.repeat(50)}\nDETAILS\n${'='.repeat(50)}\n\n`;
 
-  (data.besuche || []).forEach(b => {
+  sortBesuche(data.besuche || []).forEach(b => {
     text += `--- ${b.firma} ---\n`;
     text += `Datum: ${formatDatum(b.datum)}\n`;
     if (b.ort) text += `Ort: ${b.ort}\n`;
