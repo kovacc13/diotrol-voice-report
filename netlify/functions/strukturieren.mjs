@@ -72,8 +72,12 @@ WICHTIG: "Generalunternehmer" und "Fassadenbau" sind KEINE gueltigen Segmente me
 
 TO-DO ZUORDNUNG - Erkenne wessen Aufgabe es ist:
 - Aufgaben fuer Daniel Pfister (DP): Alles was er selbst erledigen muss (Muster senden, Angebot erstellen, Kundenbesuche, Tests, Nachfassen)
-- Aufgaben fuer Marco/MH (Chef/Vorgesetzter): Signalwoerter wie "fuer Marco", "Marco soll", "Chef informieren", "MH mitteilen", "Geschaeftsleitung", "intern besprechen", "Budget benoetigt", "Freigabe", "strategisch", "Entscheidung von oben"
+- Aufgaben fuer Marco Hauert / MH (Chef/Vorgesetzter, Geschaeftsleitung Diotrol): IMMER wenn Daniel "Chef", "mein Chef", "der Chef" sagt - das ist IMMER Marco Hauert! Weitere Signalwoerter: "fuer Marco", "Marco soll", "MH mitteilen", "Geschaeftsleitung", "intern besprechen", "Budget benoetigt", "Freigabe", "strategisch", "Entscheidung von oben"
 - Wenn nicht klar zuordenbar: standardmaessig als Daniel-ToDo behandeln
+
+UHRZEIT EXTRAHIEREN:
+- Wenn der Sprecher eine Uhrzeit nennt ("um 9 Uhr", "um halb elf", "um 14:30", "kurz nach acht", "am Vormittag um 10"), extrahiere sie ins Feld "uhrzeit" im Format "HH:MM" (24h-Format).
+- Wenn keine Uhrzeit erwaehnt wird, lass das Feld leer ("").
 
 Der diktierte Text:
 """
@@ -85,6 +89,7 @@ Antworte NUR mit einem JSON-Objekt (kein Markdown, keine Erklaerung):
   "firma": "Firmenname",
   "ort": "Ort/Stadt",
   "kontaktperson": "Name der Kontaktperson",
+  "uhrzeit": "HH:MM oder leer",
   "segment": "eines von: Schreiner, Maler, Zimmerei, Fensterbau, Fassadenbau, Architekt, Generalunternehmer, Handel, Diotrol-Intern, Office, Sonstiges",
   "besuchstyp": "eines von: Erstbesuch, Folgebesuch, Kaltbesuch, Beratung, Reklamation, Schulung, Messe, Telefonat, Besprechung/Meeting",
   "produkte": "Exakter Produktname1, Exakter Produktname2",

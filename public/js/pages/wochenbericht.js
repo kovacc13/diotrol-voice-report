@@ -6,6 +6,33 @@
 
 let wochenberichtData = null;
 
+// Extrahiert Uhrzeit (HH:MM / HH.MM / HHhMM) aus einem Besuch.
+// Sucht in Reihenfolge: explizites Feld 'uhrzeit'/'zeit', dann themen, details, ergebnis.
+// Rueckgabe: Minuten seit Mitternacht, oder Number.MAX_SAFE_INTEGER wenn nichts gefunden
+// (so landen Besuche ohne Uhrzeit am Ende).
+function extractBesuchTime(b) {
+  if (!b) return Number.MAX_SAFE_INTEGER;
+  if (b.uhrzeit) {
+    const m = String(b.uhrzeit).match(/(\d{1,2})[:\.h](\d{2})/);
+    if (m) return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  }
+  const felder = [b.zeit, b.themen, b.details, b.ergebnis, b.naechsteSchritte];
+  for (const f of felder) {
+    if (!f) continue;
+    const m = String(f).match(/\b(\d{1,2})[:\.h](\d{2})\b/);
+    if (m) {
+      const h = parseInt(m[1], 10);
+      const min = parseInt(m[2], 10);
+      if (h >= 0 && h <= 23 && min >= 0 && min <= 59) return h * 60 + min;
+    }
+  }
+  return Number.MAX_SAFE_INTEGER;
+}
+
+function sortBesucheByTime(arr) {
+  return (arr || []).slice().sort((a, b) => extractBesuchTime(a) - extractBesuchTime(b));
+}
+
 // To-Do Status (Checkboxen) - wird pro Session im Speicher gehalten
 let todoStatus = {};
 
@@ -168,7 +195,7 @@ async function wochenberichtLaden() {
     renderTodoListen(data);
 
     // Besuche rendern
-    renderWochenberichtBesuche(data.besuche || []);
+    renderWochenberichtBesuche(sortBesucheByTime(data.besuche || []));
 
   } catch (error) {
     document.getElementById('wbBesuche').innerHTML = `
@@ -873,6 +900,8 @@ function exportPDF() {
     if (!tage[tag]) tage[tag] = [];
     tage[tag].push(b);
   });
+  // Innerhalb jedes Tages nach Uhrzeit sortieren (frueh -> spaet)
+  Object.keys(tage).forEach(t => { tage[t] = sortBesucheByTime(tage[t]); });
 
   const tagReihenfolge = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
   tagReihenfolge.forEach(tag => {
@@ -912,12 +941,15 @@ function exportPDF() {
       pdf.setTextColor(...TEXT_DUNKEL);
       const firmaText = b.firma || 'Unbekannt';
       pdf.text(firmaText, 25, y + 1);
+      // Breite der Firma bei AKTUELLER Schriftgroesse 10pt messen,
+      // BEVOR wir die Schriftgroesse fuer den Kontakt aendern (sonst Ueberlappung!)
+      const firmaWidth = pdf.getTextWidth(firmaText);
 
       if (b.kontaktperson) {
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(8);
         pdf.setTextColor(...TEXT_GRAU);
-        pdf.text(b.kontaktperson, 25 + pdf.getTextWidth(firmaText) + 3, y + 1);
+        pdf.text(`| ${b.kontaktperson}`, 25 + firmaWidth + 2, y + 1);
       }
       if (b.segment) {
         pdf.setFontSize(7);
@@ -1182,6 +1214,8 @@ th.marco { background-color: #5b7fa6; }
     if (!tage[tag]) tage[tag] = [];
     tage[tag].push(b);
   });
+  // Innerhalb jedes Tages nach Uhrzeit sortieren
+  Object.keys(tage).forEach(t => { tage[t] = sortBesucheByTime(tage[t]); });
 
   ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'].forEach(tag => {
     if (!tage[tag]) return;

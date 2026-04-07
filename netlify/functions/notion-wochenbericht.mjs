@@ -51,6 +51,7 @@ function besuchToObject(page) {
     stellungnahme: getText(p['Stellungnahme']),
     projekt: getText(p['Projekt']),
     datum: getText(p['Datum']),
+    uhrzeit: getText(p['Uhrzeit']),
     details: getText(p['Details']),
     fotos: getText(p['Fotos'])
   };
