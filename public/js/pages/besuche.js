@@ -17,6 +17,9 @@ async function renderBesuche() {
 
     <div class="search-bar">
       <input type="text" class="search-input" id="besucheSuche" placeholder="Nach Kunde, Produkt, Kontakt suchen..." onkeyup="besucheSuchen()">
+      <select class="filter-select" id="besucheSegmentFilter" onchange="besucheSuchen()">
+        <option value="">Alle Segmente</option>
+      </select>
       <select class="filter-select" id="besucheKWFilter" onchange="besucheSuchen()">
         <option value="">Alle Kalenderwochen</option>
       </select>
@@ -29,6 +32,16 @@ async function renderBesuche() {
   `;
 
   await ladeBesucheListe();
+
+  // Segment-Filter von Dashboard/Wochenbericht uebernehmen
+  if (window.pendingSegmentFilter) {
+    const segSelect = document.getElementById('besucheSegmentFilter');
+    if (segSelect) {
+      segSelect.value = window.pendingSegmentFilter;
+    }
+    window.pendingSegmentFilter = null;
+    await besucheSuchen();
+  }
 }
 
 let alleBesucheCache = [];
@@ -45,6 +58,15 @@ async function ladeBesucheListe(filter = {}) {
       const currentVal = kwSelect.value;
       kwSelect.innerHTML = '<option value="">Alle Kalenderwochen</option>' +
         kws.map(kw => `<option value="${kw}" ${kw == currentVal ? 'selected' : ''}>KW ${kw}</option>`).join('');
+    }
+
+    // Segment-Dropdown befuellen
+    const segmente = [...new Set(besuche.map(b => b.segment || 'Sonstiges'))].sort();
+    const segSelect = document.getElementById('besucheSegmentFilter');
+    if (segSelect) {
+      const currentSeg = segSelect.value;
+      segSelect.innerHTML = '<option value="">Alle Segmente</option>' +
+        segmente.map(s => `<option value="${s}" ${s === currentSeg ? 'selected' : ''}>${s}</option>`).join('');
     }
 
     renderBesucheListe(besuche);
@@ -103,12 +125,25 @@ function renderBesucheListe(besuche) {
 async function besucheSuchen() {
   const suche = document.getElementById('besucheSuche')?.value?.trim() || '';
   const kw = document.getElementById('besucheKWFilter')?.value || '';
+  const segment = document.getElementById('besucheSegmentFilter')?.value || '';
 
   const filter = {};
   if (suche) filter.suche = suche;
   if (kw) filter.kw = kw;
 
+  // Segment-Filter client-seitig anwenden (wird nicht an API geschickt)
   await ladeBesucheListe(filter);
+
+  if (segment && alleBesucheCache.length > 0) {
+    const gefiltert = alleBesucheCache.filter(b => (b.segment || 'Sonstiges') === segment);
+    renderBesucheListe(gefiltert);
+  }
+}
+
+// Navigation von Dashboard/Wochenbericht: Segment vorfiltern
+function filterBesucheNachSegment(segment) {
+  window.pendingSegmentFilter = segment;
+  window.location.hash = '#/besuche';
 }
 
 // ---- Detail-Modal ----

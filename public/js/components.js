@@ -160,10 +160,10 @@ function confirmDialog(message) {
 }
 
 // Segment-Optionen
-const SEGMENTE = ['Schreiner', 'Maler', 'Zimmerei', 'Fensterbau', 'Fassadenbau', 'Architekt', 'Generalunternehmer', 'Handel', 'Sonstiges'];
+const SEGMENTE = ['Schreiner', 'Maler', 'Zimmerei', 'Fensterbau', 'Holzbau', 'Architekt', 'Holzbauingenieure', 'Hobelwerke', 'Saegereien', 'Handel', 'Diotrol-Intern', 'Office', 'Sonstiges'];
 
 // Besuchstyp-Optionen
-const BESUCHSTYPEN = ['Erstbesuch', 'Folgebesuch', 'Kaltbesuch', 'Beratung', 'Reklamation', 'Schulung', 'Messe', 'Telefonat'];
+const BESUCHSTYPEN = ['Erstbesuch', 'Folgebesuch', 'Kaltbesuch', 'Beratung', 'Reklamation', 'Schulung', 'Messe', 'Telefonat', 'Besprechung/Meeting'];
 
 // Typ-Optionen
 const TYPEN = ['Kundenbesuch', 'Intern', 'Office', 'Reise'];

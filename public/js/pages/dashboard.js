@@ -38,14 +38,18 @@ async function renderDashboard() {
 
   const SEG_FARBEN_DASH = {
     'Architekt': '#5b7fa6', 'Maler': '#b87a6b', 'Zimmerei': '#6a9b6a',
-    'Fensterbau': '#8b7baa', 'Schreiner': '#a89060', 'Fassadenbau': '#6a9b9b',
-    'Handel': '#c4956a', 'Generalunternehmer': '#7a7a9b', 'Sonstiges': '#8a8a8a'
+    'Fensterbau': '#8b7baa', 'Schreiner': '#a89060', 'Holzbau': '#6a9b9b',
+    'Holzbauingenieure': '#5a8a7a', 'Hobelwerke': '#8a7a5a', 'Saegereien': '#7a6a5a',
+    'Handel': '#c4956a',
+    'Diotrol-Intern': '#4a7a6a', 'Office': '#6a8a9b', 'Sonstiges': '#8a8a8a'
   };
 
   const SEGMENT_ICONS_DASH = {
     'Schreiner': 'T', 'Maler': 'M', 'Zimmerei': 'H',
-    'Fensterbau': 'F', 'Fassadenbau': 'Fa', 'Architekt': 'A',
-    'Generalunternehmer': 'GU', 'Handel': 'D', 'Sonstiges': 'X'
+    'Fensterbau': 'F', 'Holzbau': 'Hb', 'Architekt': 'A',
+    'Holzbauingenieure': 'HI', 'Hobelwerke': 'Hw', 'Saegereien': 'Sä',
+    'Handel': 'D',
+    'Diotrol-Intern': 'DI', 'Office': 'O', 'Sonstiges': 'X'
   };
 
   main.innerHTML = `
@@ -98,7 +102,7 @@ async function renderDashboard() {
           const farbe = SEG_FARBEN_DASH[seg] || '#6b7280';
           const icon = SEGMENT_ICONS_DASH[seg] || 'X';
           return `
-            <div class="segment-ranking-row">
+            <div class="segment-ranking-row segment-ranking-clickable" onclick="filterBesucheNachSegment('${seg}')" title="Besuche fuer ${seg} anzeigen">
               <div class="segment-ranking-rank">${idx + 1}.</div>
               <div class="segment-ranking-icon" style="background:${farbe};">${icon}</div>
               <div class="segment-ranking-info">

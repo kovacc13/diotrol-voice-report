@@ -198,7 +198,7 @@ function kundenFiltern() {
   }
 
   // Sortierung
-  const segmentReihenfolge = ['Schreiner', 'Maler', 'Zimmerei', 'Fensterbau', 'Fassadenbau', 'Architekt', 'Generalunternehmer', 'Handel', 'Sonstiges', ''];
+  const segmentReihenfolge = ['Schreiner', 'Maler', 'Zimmerei', 'Fensterbau', 'Fassadenbau', 'Architekt', 'Generalunternehmer', 'Handel', 'Diotrol-Intern', 'Office', 'Sonstiges', ''];
 
   switch (sortBy) {
     case 'alpha':

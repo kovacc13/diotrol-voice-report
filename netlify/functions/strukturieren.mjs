@@ -59,11 +59,16 @@ Interne Kuerzel aufloesen: DP=Daniel Pfister, MH/Marco=Vorgesetzter/Chef, BaLa=B
 Wenn ein Produktname aehnlich klingt (z.B. "Hydropärl" oder "Hydro Pearl" -> Hydroperl UV, "Golden Oil" -> GoldenOil Onecoat, "Sefo" -> SEFO), korrigiere ihn auf den exakten Namen aus dem Glossar.
 
 SEGMENT-ERKENNUNG - Erkenne das Segment anhand von:
-- Firmenname (z.B. "Fenster" im Namen = Fensterbau, "Holzbau" = Zimmerei)
-- Taetigkeitsbereich (Fassade streichen = Maler, Schreinerei = Schreiner)
+Erlaubte Segmente: Schreiner, Maler, Zimmerei, Fensterbau, Holzbau, Architekt, Holzbauingenieure, Hobelwerke, Saegereien, Handel, Diotrol-Intern, Office, Sonstiges
+- Firmenname (z.B. "Fenster" im Namen = Fensterbau, "Holzbau" = Holzbau, "Saegerei/Saegewerk" = Saegereien, "Hobelwerk" = Hobelwerke)
+- Taetigkeitsbereich (Fassade/Holzfassade = Holzbau, Schreinerei = Schreiner, Maler = Maler)
+- Ingenieurbuero fuer Holzbau, Tragwerksplanung Holz, statische Berechnung Holz = Holzbauingenieure
 - Produkte (Aqua F = typisch Fensterbau, Architektenberatung = Architekt)
-- Branchenhinweise im Text (Zimmermann, Schreinermeister, Malergeschaeft, Architekturbüro, Bauleitung, Haendler, GU, usw.)
+- Branchenhinweise im Text (Zimmermann, Schreinermeister, Malergeschaeft, Architekturbuero, Haendler, usw.)
+- Interne Taetigkeiten bei Diotrol (Lager, Verwaltung, interne Besprechung) = Diotrol-Intern
+- Bueroarbeit, Planung, Home-Office, Termine koordinieren = Office
 WICHTIG: "Sonstiges" nur verwenden wenn KEIN anderes Segment passt! Lieber das wahrscheinlichste Segment waehlen.
+WICHTIG: "Generalunternehmer" und "Fassadenbau" sind KEINE gueltigen Segmente mehr! Verwende stattdessen "Holzbau" oder das passendste andere Segment.
 
 TO-DO ZUORDNUNG - Erkenne wessen Aufgabe es ist:
 - Aufgaben fuer Daniel Pfister (DP): Alles was er selbst erledigen muss (Muster senden, Angebot erstellen, Kundenbesuche, Tests, Nachfassen)
@@ -80,8 +85,8 @@ Antworte NUR mit einem JSON-Objekt (kein Markdown, keine Erklaerung):
   "firma": "Firmenname",
   "ort": "Ort/Stadt",
   "kontaktperson": "Name der Kontaktperson",
-  "segment": "eines von: Schreiner, Maler, Zimmerei, Fensterbau, Fassadenbau, Architekt, Generalunternehmer, Handel, Sonstiges",
-  "besuchstyp": "eines von: Erstbesuch, Folgebesuch, Kaltbesuch, Beratung, Reklamation, Schulung, Messe, Telefonat",
+  "segment": "eines von: Schreiner, Maler, Zimmerei, Fensterbau, Fassadenbau, Architekt, Generalunternehmer, Handel, Diotrol-Intern, Office, Sonstiges",
+  "besuchstyp": "eines von: Erstbesuch, Folgebesuch, Kaltbesuch, Beratung, Reklamation, Schulung, Messe, Telefonat, Besprechung/Meeting",
   "produkte": "Exakter Produktname1, Exakter Produktname2",
   "themen": "\u2022 Thema 1\\n\u2022 Thema 2\\n\u2022 Thema 3",
   "ergebnis": "Zusammenfassung des Ergebnisses",
