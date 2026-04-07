@@ -907,7 +907,8 @@ function exportPDF() {
   tagReihenfolge.forEach(tag => {
     if (!tage[tag]) return;
 
-    checkPage(20);
+    // Mind. Header (13) + erster Besuch (Firma + 1 Feld ~25) + Puffer
+    checkPage(45);
 
     // Tag-Header
     pdf.setFillColor(...GRUEN);
@@ -923,7 +924,8 @@ function exportPDF() {
 
     // Besuche (sortiert: Office zuerst, Intern zuletzt)
     sortBesuche(tage[tag]).forEach((b, idx) => {
-      checkPage(25);
+      // Firmen-Header + mind. ein Feld zusammen halten
+      checkPage(20);
 
       // Icon-Kreis + Firma
       const seg = b.segment || 'Sonstiges';
@@ -970,10 +972,28 @@ function exportPDF() {
 
       felder.forEach(([label, wert, highlight]) => {
         if (!wert) return;
-        checkPage(12);
+
+        // Lines vorab berechnen, damit wir die exakte Blockhoehe kennen
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8);
+        const lines = pdf.splitTextToSize(String(wert), 163);
+        // Hoehe = Label (4.5) + Zeilen (4 je) + Puffer (2)
+        const blockH = 4.5 + lines.length * 4 + 2;
+
+        // Block-weiten Seitenumbruch sicherstellen, BEVOR wir zeichnen
+        checkPage(blockH + 2);
 
         const yVor = y;
 
+        // Hintergrund zuerst (nur bei highlight)
+        if (highlight) {
+          pdf.setFillColor(...highlight[0]);
+          pdf.rect(21, yVor - 3, 172, blockH, 'F');
+          pdf.setFillColor(...highlight[1]);
+          pdf.rect(21, yVor - 3, 2, blockH, 'F');
+        }
+
+        // Label
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(8);
         const labelColor = highlight ? highlight[1] : GRUEN_DUNKEL;
@@ -981,41 +1001,20 @@ function exportPDF() {
         pdf.text(`${label}:`, 25, y);
         y += 4.5;
 
+        // Text-Zeilen (einmal!)
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(8);
         pdf.setTextColor(...TEXT_DUNKEL);
-        const lines = pdf.splitTextToSize(wert, 163);
         lines.forEach(line => {
-          checkPage(5);
           pdf.text(line, 25, y);
           y += 4;
         });
-        y += 1;
-
-        if (highlight) {
-          const blockH = y - yVor + 1;
-          pdf.setFillColor(...highlight[0]);
-          pdf.rect(21, yVor - 3, 172, blockH, 'F');
-          pdf.setFillColor(...highlight[1]);
-          pdf.rect(21, yVor - 3, 2, blockH, 'F');
-          pdf.setFont('helvetica', 'bold');
-          pdf.setFontSize(8);
-          pdf.setTextColor(...highlight[1]);
-          pdf.text(`${label}:`, 25, yVor);
-          pdf.setFont('helvetica', 'normal');
-          pdf.setTextColor(...TEXT_DUNKEL);
-          let reY = yVor + 4.5;
-          lines.forEach(line => {
-            pdf.text(line, 25, reY);
-            reY += 4;
-          });
-        }
-
-        y += 1;
+        y += 2;
       });
 
-      // Trennlinie
+      // Trennlinie (nur wenn noch Platz auf der Seite)
       if (idx < tage[tag].length - 1) {
+        checkPage(8);
         pdf.setDrawColor(...BORDER);
         pdf.setLineWidth(0.2);
         pdf.line(22, y, 190, y);
